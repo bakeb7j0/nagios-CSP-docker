@@ -1,0 +1,8 @@
+4.0.0 - 01/22/2024
+==================
+- Fixed dashlet resizing issues - DA
+
+4.0.0 - 01/22/2024
+==================
+- Added neptune styling [GL:XI#612] - GW
+- Initialized changelog

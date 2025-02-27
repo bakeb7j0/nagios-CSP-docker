@@ -1,0 +1,68 @@
+{
+  "index.html": {
+    "file": "assets/app-DFYTQRtP.js",
+    "name": "app",
+    "src": "index.html",
+    "isEntry": true,
+    "css": [
+      "assets/app-Doqm9VY3.css"
+    ],
+    "assets": [
+      "assets/advancedConfig-BaKd70Du.png",
+      "assets/advancedConfigLight-7l-kJhtY.png",
+      "assets/autoDiscovery-ATGP7sBI.png",
+      "assets/autoDiscoveryLight-CQixbMYq.png",
+      "assets/manageAccountSettings-C3HtSb04.png",
+      "assets/manageAccoujntSettingsLight-CgaCZgJh.png",
+      "assets/monitoringAgents-DUazVkYE.png",
+      "assets/monitoringAgentsLight-SMRNNKgO.png",
+      "assets/WizardDrop-Bh3n61VC.png",
+      "assets/WizardDropLight-BtJq1ySO.png",
+      "assets/nagiosxi-CE2RyL1I.ico"
+    ]
+  },
+  "src/assets/images/config/WizardDrop.png": {
+    "file": "assets/WizardDrop-Bh3n61VC.png",
+    "src": "src/assets/images/config/WizardDrop.png"
+  },
+  "src/assets/images/config/WizardDropLight.png": {
+    "file": "assets/WizardDropLight-BtJq1ySO.png",
+    "src": "src/assets/images/config/WizardDropLight.png"
+  },
+  "src/assets/images/config/advancedConfig.png": {
+    "file": "assets/advancedConfig-BaKd70Du.png",
+    "src": "src/assets/images/config/advancedConfig.png"
+  },
+  "src/assets/images/config/advancedConfigLight.png": {
+    "file": "assets/advancedConfigLight-7l-kJhtY.png",
+    "src": "src/assets/images/config/advancedConfigLight.png"
+  },
+  "src/assets/images/config/autoDiscovery.png": {
+    "file": "assets/autoDiscovery-ATGP7sBI.png",
+    "src": "src/assets/images/config/autoDiscovery.png"
+  },
+  "src/assets/images/config/autoDiscoveryLight.png": {
+    "file": "assets/autoDiscoveryLight-CQixbMYq.png",
+    "src": "src/assets/images/config/autoDiscoveryLight.png"
+  },
+  "src/assets/images/config/manageAccoujntSettingsLight.png": {
+    "file": "assets/manageAccoujntSettingsLight-CgaCZgJh.png",
+    "src": "src/assets/images/config/manageAccoujntSettingsLight.png"
+  },
+  "src/assets/images/config/manageAccountSettings.png": {
+    "file": "assets/manageAccountSettings-C3HtSb04.png",
+    "src": "src/assets/images/config/manageAccountSettings.png"
+  },
+  "src/assets/images/config/monitoringAgents.png": {
+    "file": "assets/monitoringAgents-DUazVkYE.png",
+    "src": "src/assets/images/config/monitoringAgents.png"
+  },
+  "src/assets/images/config/monitoringAgentsLight.png": {
+    "file": "assets/monitoringAgentsLight-SMRNNKgO.png",
+    "src": "src/assets/images/config/monitoringAgentsLight.png"
+  },
+  "src/assets/nagiosxi.ico": {
+    "file": "assets/nagiosxi-CE2RyL1I.ico",
+    "src": "src/assets/nagiosxi.ico"
+  }
+}

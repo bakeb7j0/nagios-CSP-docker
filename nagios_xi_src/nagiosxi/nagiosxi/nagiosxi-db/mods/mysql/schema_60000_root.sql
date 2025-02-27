@@ -1,0 +1,31 @@
+-- Changing Permissions for nagiosxi user
+CREATE USER 'dbmaint_nagiosxi'@'USERDATABASE' IDENTIFIED BY 'DBMAINTDEFAULTPASSWORD';
+GRANT SELECT,INSERT,DELETE ON `nagiosxi`.* TO 'dbmaint_nagiosxi'@'USERDATABASE';
+GRANT UPDATE ON `nagiosxi`.`xi_meta` TO 'dbmaint_nagiosxi'@'USERDATABASE';
+GRANT UPDATE ON `nagiosxi`.`xi_sysstat` TO 'dbmaint_nagiosxi'@'USERDATABASE';
+
+REVOKE ALL ON `nagiosxi`.* FROM 'nagiosxi'@'USERDATABASE';
+GRANT LOCK TABLES ON `nagiosxi`.* TO 'nagiosxi'@'USERDATABASE';
+GRANT SELECT,INSERT ON `nagiosxi`.`xi_auditlog` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_auth_tokens` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_banner_messages` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_cmp_ccm_backups` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_cmp_favorites` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_cmp_nagiosbpi_backups` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_cmp_scheduledreports_log` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_cmp_trapdata` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_cmp_trapdata_log` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_commands` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_deploy_agents` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_deploy_jobs` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_eventqueue` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_events` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_link_users_messages` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_meta` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_mibs` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_options` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_sessions` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_sysstat` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_usermeta` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_users` TO 'nagiosxi'@'USERDATABASE';
+GRANT ALL ON `nagiosxi`.`xi_wizard_history` TO 'nagiosxi'@'USERDATABASE';

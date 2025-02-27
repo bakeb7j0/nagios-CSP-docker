@@ -1,0 +1,136 @@
+/* Override the radius for the #child_popup_layer */
+/* Currently does not work in CentOSS 9 Firefox */
+#child_popup_layer:has(#helpcontainer) { /* Only in chrome */
+    border-radius: 1rem;
+}
+div#scriptcontainer {
+    position: relative;
+}
+div#scriptcontainer h2 {
+    margin-bottom: 0px;
+    margin-top: 0px;
+    flex-basis: 100%;
+}
+div#scriptcontainer li {
+    line-height: 15px;
+}
+
+/* Only one changed, so far. */
+div.helpsystem_icon {
+    float: right;
+    text-align: center;
+    padding: 0 0 0 10px;
+    top: 19px;
+    position: relative;
+}
+div.helpsystem_icon:hover .material-symbols-outlined {
+    color: var(--foreground);
+}
+div.helpsystem_icon:first-of-type { 
+    padding-right: 20px;
+    padding-left: 0px;
+    margin-left: 10px;
+}
+div.helpsystem_icon:not(.favorites_icon)>.btn:active,
+div.helpsystem_icon:not(.favorites_icon)>.btn:focus {
+    background-color: var(--muted);
+}
+
+#helpsystem_resources {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Refactored for Neptune */
+.helpsystem-card-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    top: -15px;
+}
+
+.helpsystem-content-container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.helpsystem-title-container {
+    margin-bottom: 10px;
+}
+
+/* Have to adjust position, to line up with close button */
+.helpsystem-title {
+    width: 80%;
+    font-size: 13pt;
+    font-weight: bold;
+}
+
+#helpsystem_video {
+    display: none;
+}
+#helpsystem_video iframe {
+    margin: 0;
+}
+#helpsystem_video p {
+    font-weight: bold;
+}
+
+#helpsystem_thumbnails {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+    overflow: auto;
+    height: 200px;
+}
+
+.helpsystem-thumbnail {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: var(--foreground);
+    cursor: pointer;
+    width: 220px;
+}
+.helpsystem-thumbnail > img {
+    width: 220px;
+    height: 123px;
+    border-radius: 1rem;
+}
+
+ul {
+    margin-top: 0;
+    margin-bottom: 10px;
+    padding-left: 30px;
+}
+
+ul > a {
+    display: list-item;
+}
+
+.helpsystem-card-container a:not([href]):not([class]), .helpsystem-card-container a:not([href]):not([class]):hover {
+    color: var(--primary);
+    transition: color 0.25s ease;
+}
+
+#child_popup_container {
+    padding: 0 10px;
+}
+
+#helpsystem_video {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 5px;
+}
+
+#close_child_popup_link > i.material-symbols-outlined {
+    padding: 10px;
+    margin-top: -10px;
+    cursor: pointer;
+}
+
+div.helpsystem_icon:has(a[style*="display: none;"])+div.helpsystem_icon {
+    padding-right: 20px;
+}

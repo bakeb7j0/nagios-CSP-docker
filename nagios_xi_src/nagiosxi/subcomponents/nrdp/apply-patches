@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+workdir=$(readlink -f $(dirname $0))
+pkgname=$1
+
+# NRDP uses CRLF line endings; make sure patch files match.
+dos2unix $workdir/patches/*
+
+# Apply the patch files
+if [ -f "$workdir/$pkgname/server/plugins/nrdsconfigupdate/nrdsconfigupdate.inc.php" ]; then
+	dos2unix "$workdir/$pkgname/server/plugins/nrdsconfigupdate/nrdsconfigupdate.inc.php"
+	patch -l "$workdir/$pkgname/server/plugins/nrdsconfigupdate/nrdsconfigupdate.inc.php" -i "$workdir/patches/path_traversal_filtering.patch"
+fi
+
+if [ -f "$workdir/$pkgname/server/plugins/nagioscorepassivecheck/nagioscorepassivecheck.inc.php" ]; then
+	dos2unix "$workdir/$pkgname/server/plugins/nagioscorepassivecheck/nagioscorepassivecheck.inc.php"
+	patch -l "$workdir/$pkgname/server/plugins/nagioscorepassivecheck/nagioscorepassivecheck.inc.php" -i "$workdir/patches/passive_check_filtering.patch"
+fi

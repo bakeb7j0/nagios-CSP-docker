@@ -1,0 +1,1557 @@
+@font-face {
+    font-family: 'Geist';
+    src: url('../../fonts/Geist-Regular.otf');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('../../fonts/Geist-Bold.otf');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('../../fonts/Geist-SemiBold.otf');
+    font-weight: 600; 
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('../../fonts/Geist-Black.otf');
+    font-weight: 900; 
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('../../fonts/Geist-Thin.otf');
+    font-weight: 100;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('../../fonts/Geist-UltraLight.otf');
+    font-weight: 200; 
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('../../fonts/Geist-UltraBlack.otf');
+    font-weight: 950;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-Regular.otf') format('opentype'),
+         url('../../fonts/GeistMono-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-Bold.otf') format('opentype'),
+         url('../../fonts/GeistMono-Bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-SemiBold.otf') format('opentype'),
+         url('../../fonts/GeistMono-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-Black.otf') format('opentype'),
+         url('../../fonts/GeistMono-Black.woff2') format('woff2');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-Light.otf') format('opentype'),
+         url('../../fonts/GeistMono-Light.woff2') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-Medium.otf') format('opentype'),
+         url('../../fonts/GeistMono-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-Thin.otf') format('opentype'),
+         url('../../fonts/GeistMono-Thin.woff2') format('woff2');
+    font-weight: 100;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-UltraBlack.otf') format('opentype'),
+         url('../../fonts/GeistMono-UltraBlack.woff2') format('woff2');
+    font-weight: 950;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMono-UltraLight.otf') format('opentype'),
+         url('../../fonts/GeistMono-UltraLight.woff2') format('woff2');
+    font-weight: 200;
+    font-style: normal;
+}
+         
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../../fonts/GeistMonoVariableVF.ttf') format('truetype'),
+    url('../../fonts/GeistMonoVariableVF.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.material-symbols-outlined.md-button {
+    padding: 4px;
+    border-radius: var(--radius);
+}
+.material-symbols-outlined.md-button:hover {
+    background-color: var(--muted);
+    color:var(--foreground);
+    transition: background-color 300ms ease, color 300ms ease;
+    -ms-transition: background-color 300ms ease, color 300ms ease;
+    -webkit-transition: background-color 300ms ease, color 300ms ease;
+}
+.material-symbols-outlined.md-action { color: var(--foreground); }
+
+/* Primary container styles to match the rest of the neptune XI interface */
+body, body.child, body.parent {
+    background-color: var(--background);
+    color: var(--foreground);
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-top: 3vh;
+    font-family: 'Geist';
+}
+.childpage {
+    padding: 10px 20px;
+}
+.card {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0px;
+}
+h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 10px;
+    margin-bottom: 10px !important;
+    padding-bottom: 10px;
+}
+a {
+    color: var(--primary);
+}
+
+/* Button styles altered from neptune.css for Next, Cancel, and Back buttons */
+/* 
+    btn-primary for Next
+    btn-default.btn-outline-primary for Cancel
+    btn-outline-primary.btn-nagios.btn-select-template for Finish with Templates
+    btn-outline-primary.btn-nagios[name="finishButton"] for Finish with Defaults
+    btn-outline-primary.btn-nagios.btn-save-template for Save as Template
+    btn-outline-primary.btn-nagios for Back
+*/
+.btn:not(.btn-link) {
+    height: 36px;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 20px;
+    padding: 8px 16px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    background-color: var(--primary);
+    border-radius:var(--radius);
+    border: 1px solid var(--border);
+}
+.btn.btn-default {
+    background-color: var(--secondary);
+    color: var(--foreground);
+    border: none;
+}
+.btn.btn-default:hover {
+    background-color: var(--muted);
+}
+.btn.btn-lg {
+    max-width: 270px;
+}
+.btn:hover {
+    color: var(--primary-foreground);
+    background-color: var(--primary-hover);
+}
+.btn-link:hover,
+.btn-check+.btn:hover {
+    color: var(--foreground);
+    background-color: var(--background);
+}
+.btn:not(.btn-link, .btn-check+.btn):focus {
+    box-shadow: none;
+    color: var(--foreground);
+}
+.btn-primary { 
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border: 1px solid var(--border);
+    font-weight: 400;
+}
+.btn-outline-primary.btn-nagios {
+    color: var(--foreground);
+    background-color: var(--background);
+    border: none;
+}
+.btn-primary:focus,
+.btn-outline-primary:focus {
+    background-color: var(--primary);
+}
+.btn-outline-primary.btn-nagios:hover, .btn-outline-primary.btn-nagios:focus, .btn-outline-primary.btn-nagios:active {
+    background-color: var(--background);
+}
+/* Chevron translations */
+.btn-outline-primary.btn-nagios i {
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+.btn-outline-primary.btn-nagios:not(.btn-icon):hover i {
+    transform: translateX(-3px);
+}
+.btn-primary i {
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+#submitButton2.btn-primary:not(.btn-icon):hover i {
+    transform: translateX(3px);
+}
+ul.commandresult+div .btn.btn-primary {
+    white-space: nowrap;
+}
+.btn-outline-primary.btn-nagios.btn-select-template,
+.btn-outline-primary.btn-nagios.btn-save-template,
+.btn-outline-primary.btn-nagios[name="finishButton"] {
+    color: var(--foreground);
+    background-color: var(--secondary);
+    border: none;
+}
+.btn-outline-primary.btn-nagios.btn-select-template:hover, .btn-outline-primary.btn-nagios.btn-select-template:focus, .btn-outline-primary.btn-nagios.btn-select-template:active,
+.btn-outline-primary.btn-nagios.btn-save-template:hover, .btn-outline-primary.btn-nagios.btn-save-template:focus, .btn-outline-primary.btn-nagios.btn-save-template:active,
+.btn-outline-primary.btn-nagios[name="finishButton"]:hover, .btn-outline-primary.btn-nagios[name="finishButton"]:focus, .btn-outline-primary.btn-nagios[name="finishButton"]:active {
+    background-color: var(--muted);
+    border: none;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active,  .btn-primary:active:focus {
+    background-color: var(--primary-hover);
+    border-color: var(--border);
+    color:var(--input);
+    transition: background-color 300ms ease, border-color 300ms ease;
+    -webkit-transition: background-color 300ms ease, border-color 300ms ease;
+    -ms-transition: background-color 300ms ease, border-color 300ms ease;
+}
+.btn-default.btn-outline-primary { 
+    background-color: var(--background);
+    color: var(--secondary-foreground);
+    font-weight: normal;
+    border: 1px solid var(--border);
+}
+.btn-default.btn-outline-primary.active, .btn-default.btn-outline-primary.focus, .btn-default.btn-outline-primary:active, .btn-default.btn-outline-primary:focus, .btn-default.btn-outline-primary:hover, .open>.dropdown-toggle.btn-default.btn-outline-primary { 
+    background-color: var(--secondary);
+    border-color: var(--border);
+    color: var(--foreground);
+}
+.btn-default.btn-outline-primary[disabled], .btn-default.btn-outline-primary.disabled {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    border-color: var(--border);
+    cursor: not-allowed;
+}
+.btn-default.btn-outline-primary[disabled]:hover, .btn-default.btn-outline-primary.disabled:hover {
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+    border-color: var(--border);
+    transition: background-color 300ms ease, color 300ms ease;
+    cursor: not-allowed;
+}
+.btn-default.btn-outline-primary {
+    background-color: var(--background);
+    transition: all 300ms ease;
+}
+.btn-default:hover, .btn-info:hover {
+    color: var(--secondary-foreground);
+    background-color: var(--secondary);
+}
+.btn.btn-default.btn-outline-primary:focus {
+    background-color: var(--secondary);
+}
+.btn-primary .material-symbols-outlined,
+.btn-outline-primary.btn-nagios .material-symbols-outlined {
+    margin-top: 0px;
+}
+a.btn-link {
+    color: var(--primary);
+}
+.input-group-btn:has(.btn-file),
+.col-sm-auto:has(button#load-defaults) {
+    display: flex;
+    align-items: center;
+}
+.btn.btn-file {
+    max-width: 400px;
+}
+button#load-defaults {
+    color: var(--primary-foreground);
+}
+.btn.btn-file+i.icon-small,
+button#load-defaults+i.icon-small {
+    top: 0px;
+}
+button.btn-close {
+    background-image: none;
+    background-color: transparent;
+    color: var(--foreground);
+}
+button.btn-close:hover {
+    color: var(--foreground);
+    opacity: 1;
+}
+button.btn-close::before {
+    content: "close";
+    font-family: "Material Symbols Outlined";
+    display: inline-block;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'liga';
+    font-size: 20px;
+    font-weight: 600;
+    position: relative;
+    padding: 2px 6px;
+	bottom: 8px;
+}
+button.btn-close:hover::before {
+    background-color: var(--form-bg-hover);
+    border-radius:var(--radius);
+}
+
+/* Form control styles ported over from neptune.css */
+form .form-control,
+.form-control, .form-select {
+    line-height: 20px;
+    display: inline-block;
+    width: 100%;
+    height: 36px;
+    margin: 0;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+}
+
+/* Override above, so multiple list boxes are taller than 1 */
+.form-select[multiple], .form-select[size]:not([size="1"]) {
+    height: auto;
+}
+
+select.form-control {
+    padding: 8px 12px;
+    height: 36px;
+    line-height: 20px;
+}
+
+.form-select:disabled {
+    background-color: var(--wizard-form-disabled);
+    cursor: not-allowed;
+}
+form .form-control:focus, .form-control:focus, .form-select:focus {
+    box-shadow: none;
+    border-color: var(--ring);
+    background-color:var(--input);
+    color: var(--foreground);
+}
+.form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control { 
+    background-color: var(--muted);
+    font-family:"Geist Mono";
+    cursor: not-allowed;
+}
+.form-control::placeholder {
+    color: var(--placeholder-text); 
+}
+.form-control, .form-select {
+    background-color:var(--input);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    color: var(--foreground);
+}
+.rounded {
+    border-radius: var(--rounded-border-radius) !important;
+}
+.rounded-start {
+    border-bottom-left-radius: var(--rounded-border-radius) !important;
+    border-top-left-radius: var(--rounded-border-radius) !important;
+}
+.rounded-end {
+    border-bottom-right-radius: var(--rounded-border-radius) !important;
+    border-top-right-radius: var(--rounded-border-radius) !important;
+}
+
+/* Password fields */
+.btn.btn-show-secret {
+    background-color: var(--primary-foreground);
+    color: var(--foreground);
+}
+.btn.btn-show-secret:focus { 
+    background-color: var(--primary-foreground);
+}
+.btn.btn-show-secret:hover {
+    color: var(--foreground);
+    background-color: var(--secondary);
+    border-color: var(--border);
+}
+.btn-show-secret .material-symbols-outlined.md-22 {
+    font-size: 22px;
+}
+
+input[type="password"] {
+    color: var(--foreground);
+    font-family: 'Geist';
+}
+
+/** Control the size of the password dots, between browsers */
+/** Chromium */
+@media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: 0.001dpcm) {    
+    .chrome {
+        property: value;
+    }
+
+    input[type="password"]:not(:placeholder-shown) {
+        font-family: "pass";
+        font-size: 30px;
+    }
+}
+
+/** Firefox */
+@-moz-document url-prefix() {
+    input[type="password"]:not(:placeholder-shown) {
+        font-family: "pass";
+        font-size: 14px;
+        letter-spacing: 0.15em;
+    }
+}
+/** End - Control the size of the password dots */
+
+/* Tooltip styles */
+.tooltip {
+    font-size: 14px;
+}
+.tooltip-inner {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+.tooltip-arrow {
+    display: none !important;
+}
+
+/* Styles to target the Settings, Help, and Favorites buttons */
+.btn-outline-primary.btn-nagios.btn-icon { 
+    background-color: var(--secondary);
+    height: 34px; /* Looks better with chrome */
+    width: 35px;
+    padding: 0px 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--foreground);
+    cursor: pointer;
+    margin: 0px;
+}
+.btn-outline-primary.btn-nagios.btn-icon:hover { 
+    background-color: var(--muted);
+    border-color: var(--muted);
+}
+div.helpsystem_icon {
+    top: 0px;
+    padding: 32px 10px 0 10px;
+    margin: 0;
+    top: 33px !important;
+}
+.btn.btn-icon>i.material-symbols-outlined {
+    vertical-align: middle;
+    font-size: 24px;
+    font-weight: 400;
+    cursor: pointer;
+    line-height: 1.4;
+}
+a#open-cwform.btn>i.material-symbols-outlined {
+    font-variation-settings:'FILL' 1;
+}
+a#open-cwform.btn {
+   float: right;
+   align-items: center;
+   justify-content: center;
+}
+div.helpsystem_icon:first-of-type {
+    top: 33px !important;
+}
+div.helpsystem_icon.favorites_icon>button {
+    height: 36px;
+    width: 36px;
+}
+
+/* Label styles to match neptune.css */
+/* Wizards are compressed, so less padding */
+label.form-label, p {
+    font-weight: normal;
+    margin-bottom: 0px; /* If this is taller, need to increase spacing between rows */
+    font-size: 14px;
+    color: var(--muted-foreground);
+}
+p {
+    margin-bottom: 10px;
+}
+
+/* Override the required marker '*' for labels in wizard.css. */
+label.form-item-required:not(.form-item-required-mark-optional)::before {
+    content: none;
+}
+
+/* Required marker '*' for labels. Add form-item-required to labels of required fields */
+label.form-item-required:not(.form-item-required-mark-optional)::after {
+    display: inline-block;
+    content: url('../../../images/asterisk.svg');
+    position: relative;
+    right: 24px;
+}
+/* Adjust the info icons for required fields, because on the right. */
+label.form-item-required:not(.form-item-required-mark-optional) i.icon-small {
+    font-size: 16px;
+    line-height: 16px;
+    left: 20px;
+}
+i.icon-small {
+    top: 1px;
+}
+
+/* Style the badges (e.g. "Step 1", "Step 2") */
+h1 .badge.bs-badge {
+    height: 36px;
+    padding-top: 0.66rem !important;
+    background-color: var(--muted) !important;
+}
+
+/* Style the alert banners */
+.alert.alert-danger {
+    border-radius: var(--radius);
+    background-color: var(--error-msg-bg);
+    border: 1px solid var(--error-msg-border);
+    padding: 16px;
+}
+.alert.alert-danger {
+    color: var(--error-msg-text);
+}
+.alert.alert-danger p {
+    color: var(--error-msg-text);
+}
+.alert.alert-danger li {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal;
+}
+.alert.alert-danger li > i, 
+.alert.alert-danger div i {
+    color: var(--destructive);
+    font-weight: normal;
+}
+.alert.alert-danger div.card {
+    padding: 0px;
+}
+.alert.alert-danger div.card.card-p {
+    color: var(--error-msg-text-secondary);
+    font-size: 12.8px;
+}
+.alert-danger .text-dark {
+    color: var(--error-msg-text-secondary) !important;
+}
+.alert.alert-secondary {
+    background-color: var(--background);
+    border: none;
+}
+.alert.alert-secondary>strong {
+    color: var(--foreground);
+}
+.alert.alert-warning li,
+div.alert.alert-warning {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal;
+}
+.alert.alert-warning,
+.warningMessage, ul.warningMessage {
+    border-radius: var(--radius);
+    background-color: var(--warning-msg-bg);
+    border-color: var(--warning-msg-border);
+    padding: 16px;
+    color: var(--warning-msg-text);
+}
+.alert.alert-warning p,
+.warningMessage, ul.warningMessage p {
+    color: var(--warning-msg-text);
+}
+.alert.alert-warning li > i, 
+.alert.alert-warning div i,
+div.alert.alert-warning i {
+    font-weight: normal;
+}
+.alert.alert-info, .actionMessage, ul.actionMessage { 
+    border-radius:var(--radius);
+    background-color: var(--info-msg-bg);
+    border: 1px solid var(--info-msg-border);
+    padding: 16px;
+}
+.alert.alert-info, .actionMessage > li { 
+    color:var(--info-msg-text);
+    gap: 5px;
+    font-size: 12.8px;
+    font-weight: normal;
+}
+.alert.alert-info p, .actionMessage > li p { 
+    color:var(--info-msg-text);
+}
+/* Step 3+ styles */
+div.border-block {
+    border: 1px solid var(--background);
+    border-radius: var(--radius);
+    background-color: var(--background);
+    left: -20px;
+    width: calc(100% + 40px);
+}
+div.border-block.col-sm-6:not(.mb-4) {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    left: 0px;
+    width: calc(50% - 13px);
+}
+.input-group-text {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--secondary);
+    color: var(--muted-foreground);
+}
+div.border-block h3 {
+    font-weight: normal;
+}
+.form-check,
+div.border-block.neptune-form-check {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--secondary);
+    color: var(--muted-foreground);
+}
+.form-check.col-sm-10.mt-0.pt-1, 
+.form-check.col-sm-10.mt-0.pt-1:hover {
+    background-color: var(--background);
+    border: none;
+}
+
+/* Intended to specifically target windows ssh wizard step 2 */
+.form-check.col-sm-8.mt-0.mb-4.pt-1>label.form-check {
+    border: none;
+    margin-bottom: 5px;
+}
+.form-check.col-sm-8.mt-0.mb-4.pt-1:hover>label.form-check,
+.form-check.col-sm-8.mt-0.mb-4.pt-1>label.form-check:hover {
+    background-color: var(--form-bg-hover);
+}
+.form-check.row.mb-2 {
+    background-color: var(--background);
+    border: none;
+}
+label.form-check,
+div.border-block.neptune-form-check  {
+    padding: 20px;
+    margin-bottom: 10px;
+}
+.form-check:hover{
+    background-color: var(--form-bg-hover);
+    cursor: pointer;
+}
+.form-check>label:hover {
+    cursor: pointer;
+}
+div.border-block.neptune-form-check {
+    width: 100%;
+    left: 0px;
+}
+div.border-block.neptune-form-check>div.mb-3,
+div.border-block.neptune-form-check>div.mb-3>h3 {
+    display: inline;
+}
+div.border-block.neptune-form-check>div.mb-3 {
+    line-height: 34px;
+    color: var(--foreground);
+}
+div.border-block.neptune-form-check>div.input-group {
+    float: right;
+    white-space: nowrap;
+}
+.gap-3 {
+    gap: 0 !important;
+}
+div.divider {
+    border-color: var(--background);
+}
+.card .divider {
+    margin-bottom: 0px;
+}
+div.sel-users-new {
+    height: auto;
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    margin-bottom: 10px !important;
+    display: flex;
+    flex-wrap: wrap;
+    max-height: 400px;
+    overflow: auto;
+}
+div.sel-users-new .form-check {
+    padding-left: 30px;
+    height: 35px;
+    border: none;
+    display: flex;
+    align-items: center;
+    color: var(--foreground);
+    width: calc((100% - 30px) / 3);
+    margin-bottom: 0px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+div.sel-users-new .form-check {
+    margin: 5px;
+}
+.form-check:has( + div.sel-users-new:empty) {
+    display: none;
+}
+.well.freeform:has(div.sel-users-new:empty) {
+    display: none;
+}
+div.sel-users-new:empty {
+    display: none;
+}
+label.form-check:has(+div.sel-users-new) {
+    border-bottom: none;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    margin-bottom: 0px;
+}
+label.form-check + div.sel-users-new {
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
+/* Radio button styles (to make them look like switches) */
+label.switch input { 
+    opacity: 0;
+}
+label.switch {
+    float: right;
+    cursor: pointer;
+    position: relative;
+    border-radius: 1rem;
+    width: 40px;
+    height: 22px;
+}
+.form-check[for="notification_options3"] label.switch {
+    margin-top: 8px;
+}
+label.switch span.slider:before,
+label.switch span.slider:after {
+  content: '';
+}
+label.switch span.slider:before {
+    position: absolute;
+    background-color: var(--foreground);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    bottom: 3px;
+    -webkit-transition: .15s;
+    transition: .15s;
+}
+label.switch span.slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--muted);
+    border-radius: 34px;
+    -webkit-transition: .15s;
+    transition: .15s;
+}
+label.switch input:checked + span.slider {
+    background-color: var(--primary);
+}
+label.switch input[type="radio"]:checked + span.slider {
+    cursor: default;
+}
+.form-check:hover:has(label.switch input[type="radio"]:checked ){
+    background-color: var(--secondary);
+    cursor: default;
+}
+label.switch input:not(:checked) + span.slider:before {
+    background-color: var(--muted-foreground);
+}
+label.switch input:checked+span.slider:after,
+label.switch input:checked+span.slider:before {
+    -webkit-transform: translateX(18px);
+    -ms-transform: translateX(18px);
+    transform: translateX(18px);
+}
+
+/* Checkbox styles from neptune.css (for actualy checkboxes, not switches) */
+.form-check-input[type="checkbox"],
+td>input[type="checkbox"],
+input#enable_custom_host[type="checkbox"] {
+    border-radius: var(--radius);
+    background-color: var(--background);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: none;
+    border: 1px solid  var(--border);
+    padding: 8px;
+    border-radius: 5px;
+    display: inline-block;
+    position: relative;
+    transition: background-color 0.1s ease-in, border-color 0.1s ease-in;
+    bottom: 2px;
+}
+.form-check-input[type="checkbox"].service-item {
+    padding: 0px;
+}
+.well.freeform .form-check-input[type="checkbox"] {
+    bottom: 1px;
+}
+#bucket-container .row.mb-2 .form-check-input[type="checkbox"] {
+    vertical-align: middle;
+    bottom: 0px;
+}
+fieldset.wz-fieldset .form-check-input[type="checkbox"]:has(+input.form-control) {
+    bottom: 0px;
+}
+.form-check-input[type="checkbox"]:hover,
+td>input[type="checkbox"]:hover,
+input#enable_custom_host[type="checkbox"]:hover {
+    cursor:pointer;
+    background-color: var(--secondary);
+}
+.form-check-input[type="checkbox"]+label:hover,
+td>input[type="checkbox"]+label:hover,
+input#enable_custom_host[type="checkbox"]+label:hover {
+    cursor:pointer;
+}
+.form-check-input[type="checkbox"][disabled],
+td>input[type="checkbox"][disabled],
+input#enable_custom_host[type="checkbox"][disabled] {
+    cursor: not-allowed;
+}
+.form-check-input[type="checkbox"][disabled]+label,
+td>input[type="checkbox"][disabled]+label,
+input#enable_custom_host[type="checkbox"][disabled]+label {
+    cursor: not-allowed;
+}
+.form-check-input[type="checkbox"]:checked,
+td>input[type="checkbox"]:checked,
+input#enable_custom_host[type="checkbox"]:checked {
+    background-color: var(--checkbox);
+    background-image: none;
+}
+.form-check-input[type="checkbox"]:focus,
+td>input[type="checkbox"]:focus,
+input#enable_custom_host[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: none;
+}
+.form-check-input[type="checkbox"]:checked:after,
+td>input[type="checkbox"]:checked:after,
+input#enable_custom_host[type="checkbox"]:checked:after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    background: transparent;
+    width: 4px;
+    height: 7px;
+    border: solid var(--primary-foreground);
+    border-width: 0 1.7px 1.7px 0;
+    transform: rotate(45deg);
+    transition: opacity 0.3s ease;
+    opacity: 1;
+}
+
+/* Fix wrapping and alignment of buttons with info icons */
+div.col-sm-6:has(button.btn + i.icon.icon-info) {
+    display: flex;
+    align-items: center;
+}
+div.col-sm-6>button.btn + i.icon.icon-info {
+    top: 0px;
+}
+
+/* Debold, color, and correctly size certain labels */
+.form-check-label.bold {
+    color: var(--muted-foreground);
+    font-weight: normal;
+    font-size: 14px;
+}
+label.form-check-label.bold p {
+    font-size: 12.8px;
+}
+
+.form-label {
+    font-weight: normal;
+    font-size: 14px;
+}
+
+/* Fix alignment of fa-icons turns material-symbols-outlined */
+.pad-t2:has(.material-symbols-outlined) {
+    padding-top: 0px;
+    margin-top: -2px;
+}
+
+label.form-check-label:has(.material-symbols-outlined) {
+    vertical-align: middle;
+}
+
+/* Overwrite margin to maintain left-alignment */
+.col-sm-6.ms-4 {
+    margin-left: 0 !important;
+}
+
+/* Accordian styles */
+.accordion, .accordion-item, .accordion-header, .accordion-button {
+    background-color: var(--secondary);
+    color: var(--foreground);
+    font-weight: normal;
+}
+#toggle-all-header .accordion-button {
+    color: var(--muted-foreground);
+}
+.accordion-item {
+    border-color: var(--border);
+}
+.accordion-item:last-of-type {
+    border-bottom-right-radius: var(--radius);
+    border-bottom-left-radius: var(--radius);
+}
+.accordion-item:first-of-type {
+    border-top-right-radius: var(--radius);
+    border-top-left-radius: var(--radius);
+}
+.accordion-button:after {
+    background-image: var(--bs-accordion-btn-active-icon);
+}
+.accordion-button:focus {
+    border-color: var(--border);
+    box-shadow: none;
+}
+.accordion-button:not(.collapsed) {
+    background-color: var(--secondary);
+    color: var(--foreground);
+    box-shadow: none;
+}
+.dummyButton.accordion-button:not(.collapsed) {
+    color: var(--muted-foreground) !important;
+    cursor: default;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+}
+.fieldset:hover {
+    background-color: var(--form-bg-hover);
+    border-radius: var(--radius);
+}
+.accordion-body>.row>.col-sm-10 {
+    padding-left: 0px;
+}
+
+/* Make small password buttons just look like all password buttons */
+.input-group-sm > .form-control,
+.input-group-sm > .input-group-text,
+.input-group-sm {
+    font-size: 14px;
+}
+.input-group-sm>.btn {
+    padding: 8px 16px;
+}
+
+div.row>div.col-sm-4.text-end {
+    text-align: left !important;
+    width: 10%;
+    color: var(--muted-foreground);
+}
+
+.border-block p {
+    color: var(--muted-foreground);
+    font-size: 12.8px;
+}
+
+/* Generally want nothing bolded in neptune */
+a>b {
+    font-weight: normal;
+}
+
+/* NCPA Wizards Step 2 */
+fieldset.wz-fieldset .form-check {
+    background-color: var(--background);
+    border: none;
+}
+fieldset.wz-fieldset:hover,
+fieldset.wz-fieldset:hover .form-check {
+    background-color: var(--secondary);
+}
+
+/* The styles below fix font-size on a number of input fields on NCPA Step 2 to prevent overflow */
+fieldset.wz-fieldset input[type="checkbox"]:not(.service-item) + input.form-control:last-child,
+fieldset.wz-fieldset input[type="checkbox"]:not(.service-item) + input.form-control:has(+ input) {
+    font-size: 11.5px;
+}
+fieldset.wz-fieldset input[type="checkbox"] + label.form-check-label {
+    font-size: 12.8px;
+}
+fieldset.row>div.form-check {
+    background-color: var(--background);
+    border: none;
+}
+
+/* Styles list-group */
+.list-group {
+    background-color: var(--secondary);
+    border: 1px solid var(--border);
+    width: 50%;
+}
+p:has(+ .list-group) {
+    width: 50%;
+}
+.list-group .list-group-item {
+    background-color: var(--secondary);
+    color: var(--muted-foreground);
+}
+
+/* Assorted styles for BPI Step 2 */
+button.btn-close {
+    color: var(--foreground); /*currently does nothing as it's a background image */
+}
+div.container>h2 + p + p{
+    max-width: 460px;
+}
+div.select-undo-wrap .select-undo {
+    color: var(--foreground);
+}
+div.select-undo-wrap .select-undo:disabled {
+    color: var(--muted-foreground);
+    cursor: not-allowed;
+}
+
+textarea.form-control {
+    height: 200px;
+}
+
+/* Styles headers for some old wizards */
+div#configForm h5,
+form#configWizardForm h5 {
+    font-family: 'Geist';
+    font-size: 18px;
+    font-weight: 600;
+}
+div#configForm h5.ul:after,
+form#configWizardForm h5:after {
+    background-color: var(--background);
+}
+form#configWizardForm div.form-wrapper>div {
+    color: var(--muted-foreground);
+}
+
+/* List styles */
+:not(.alert)>ul>li {
+    color: var(--muted-foreground);
+}
+
+/* Tips */
+a#process-tip-btn {
+    cursor: pointer;
+}
+div#process-tips {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius);
+    color: var(--muted-foreground);
+    padding: 20px !important;
+    background-color: Var(--secondary);
+}
+
+/* MSSQL Wizards */
+nav.navbar-dark {
+    background-color: var(--secondary) !important;
+    min-width: 630px;
+}
+div.wizard-btn-bar {
+    background-color: var(--secondary);
+}
+.btn-check + .btn {
+    background-color: var(--secondary);
+    border: none;
+    border-radius: var(--radius) !important; 
+    color: var(--muted-foreground);
+}
+.btn-check:checked + .btn, .btn.active, .btn.show, .btn:first-child:active {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border: 1px solid var(--border);
+}
+.btn-check:checked + .btn:hover {
+    background-color: var(--primary-hover);
+}
+.btn-check:not(:checked) + .btn:hover {
+    background-color: var(--muted);
+}
+select.metrics-select {
+    height: 200px;
+}
+
+/* MS 365 Wizard */
+table>tbody>tr>td,
+table>tbody>tr>td>div.subtext {
+    color: var(--muted-foreground);
+}
+table>tbody>tr>td>input.textfield.form-control {
+    max-width: 50%;
+}
+table>tbody>tr>td>div.pad-t5 {
+    padding-top: 0px;
+}
+
+.select2-container--default.select2-container--disabled .select2-selection--single {
+    background-color: var(--input) !important;
+    cursor: not-allowed;
+}
+.select2-container--default .select2-selection--single {
+    background-color: var(--input) !important;
+}
+.select2-results {
+    background-color: var(--input);
+}
+.select2-selection__placeholder {
+    color: var(--placeholder-text) !important;
+}
+.select2-container--default .select2-selection--single {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+}
+div.pad-t5>label+input {
+    max-width: 200px;
+}
+
+/* Styles for Network Switch / Router wizard and SLA wizard */
+.nav-link {
+    color: var(--foreground);
+}
+.nav-link:hover {
+    background-color: var(--secondary);
+    color: var(--foreground);
+}
+.nav-pills .nav-link:not(.active) {
+    border: 1px solid var(--background);
+}
+.nav-pills .nav-link.active {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+.nav-pills .nav-link.active:hover {
+    background-color: var(--primary-hover);
+}
+.form-check:has(input#scaninterfaces, input#admindown) {
+    background-color: var(--background);
+    border: none;
+}
+
+/* Style intended for windows event log wizard step 2 - may show up elsewhere */
+.d-inline-flex {
+    padding: 5px;
+}
+
+/* Styles for configuration applied page */
+p:has(a.btn.btn-lg.btn-primary+a.btn.btn-lg.btn-outline-primary.btn-nagios) {
+    display: flex;
+}
+h5.ul {
+    font-size: 18px;
+}
+h5.ul::after {
+    background-color: var(--background);
+}
+ul.commandresult li:not(.commandresultwaiting) {
+    display: flex;
+    align-content: middle;
+    padding: 0px
+}
+div.message ul {
+    list-style-type: none;
+    padding: 1em 1.5em;
+    margin: 1em 50% 10px 0px;
+    border: 1px solid var(--border);
+    width: fit-content;
+    white-space: nowrap;
+}
+#commandsuccesscontent>.message>.infoMessage {
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: var(--success-msg-text);
+    background-color: var(--success-msg-bg);
+    border-color: var(--success-msg-border);
+}
+#commanderrorcontent>.message>.errorMessage, .apply-config-details>#errors>.error {
+    border-radius: var(--radius);
+    font-size: 14px;
+    color:var(--error-msg-text);
+    background-color: var(--error-msg-bg);
+    border-color: var(--error-msg-border);
+}
+#commandsuccesscontent>.message>.infoMessage>li{
+    color: var(--success-msg-text);
+}
+#commanderrorcontent>.message>.errorMessage>li{
+    color: var(--error-msg-text);
+}
+
+/* Styles the "Config Wizard Settings" popup (the gear icon at the top o' the page) */
+div#cwform {
+    box-shadow: none;
+    border: 1px solid var(--border);
+    background-color: var(--secondary);
+    border-radius: var(--radius);
+}
+
+/* Styles the "Finish with Template" modal */
+div.xi-modal {
+    background-color: var(--secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: none;
+}
+div.xi-modal-content>div {
+    display: flex;
+    gap: 5px;
+}
+div.xi-modal-content .btn.nagios-btn-close {
+    order: 3;
+}
+/* This positions the Cancel button to the far right of the modal. This is an insane way to do this but the sane ways weren't working */
+div.xi-modal-content .btn.nagios-btn-close+.btn.btn-default {
+    margin-right: 132px;
+}
+
+/* Sets the color/opacity of the whiteout effect (e.g. when you go between Steps or open a modal) */
+div#whiteout {
+    background-color: var(--background);
+    opacity: 0.8;
+}
+
+/* Styles for the NCPA multiselect select forms */
+select.form-select.multiselect>option {
+    background-color: var(--secondary);
+    color: var(--foreground);
+    border-radius: var(--radius);
+    height: 25px;
+    padding-left: 10px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+}
+select.form-select.multiselect>option:hover {
+    background-color: var(--muted);
+    cursor: pointer;
+}
+select.form-select.multiselect>option:checked {
+    background: linear-gradient(var(--muted),var(--muted));
+    background-color: var(--muted) !important; /* for IE */
+}
+
+/* Styles to make header look good on smaller screens */
+.wiz-header-cb {
+    padding-left: 0px;
+}
+@media (max-width: 1176px) {
+    h1 {
+        font-size: 24px;
+    }
+}
+@media (max-width: 1080px) {
+    h1 {
+        font-size: 20px;
+    }
+}
+
+/* Adjust for smaller screens, because forms use col-sm-6, so always 50% */
+#configWizardForm .container #configForm > .row,
+#configWizardForm .container > .row,
+#configWizardForm .container > div:not(.row) > .row,
+#configWizardForm .container #configForm > div > .row:has(div.col-sm-6),
+#configWizardForm .container #configForm > .col-sm-6,
+#configWizardForm .container #configForm > .col-sm-6 .border-block {
+    min-width: 1000px;
+}
+#configWizardForm .container > div:not(.row) > div.alert {
+    min-width: 500px;
+}
+
+#loadConfigAlert {
+    min-width: 470px;
+}
+
+/* Cap Planning Wizard styles */
+/* I quickly realized this wizard was gonna be a significant hassle and hasn't even been styled in modern-dark so this is unfinished */
+.basic-grid {
+    background-color: var(--background) !important;
+    border-color: var(--background) !important;
+}
+table.table-no-border {
+    border-bottom-color: var(--background) !important;
+}
+.basic-grid .input-group > label:first-child.smaller {
+    border-right: none !important;
+}
+div#table_insert_here {
+    box-shadow: none;
+    margin-bottom: 20px;
+}
+div#table_insert_here label.input-group-addon.input-grouped,
+div.metrics-grid label.input-group-addon.input-grouped {
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-top: 6px;
+}
+div#table_insert_here input.textfield.form-control.input-grouped,
+div.metrics-grid input.textfield.form-control.input-grouped,
+div.metrics-grid select.form-control.input-grouped {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+}
+div#table_insert_here .input-grouped:focus:not(:last-child) {
+    border-right: 1px solid var(--border) !important;
+}
+div#custom-host-grid {
+    color: var(--muted-foreground);
+    background-color: var(--background);
+    border: none;
+    display: flex;
+    height: auto;
+}
+div#custom-host-grid input#enable_custom_host {
+    margin-left: 0px !important;
+    margin-top: 3.5px;
+}
+div#advanced-wrapper {
+    grid-template-columns: none;
+    margin-bottom: 40px;
+}
+div.metrics-grid {
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+div.grid:has(+.grid+.metrics-grid),
+div.grid:has(+.metrics-grid) {
+    outline: none;
+}
+button.btn.render-graph {
+    border: 1px solid var(--border);
+    width: 125px;
+}
+div.grid:has(+.metrics-grid):hover {
+    background-color: var(--secondary);
+    border-radius: var(--radius);
+}
+
+/* HelpSystem for the wizards */
+/* Adding this for the wizards */
+#child_popup_layer {
+    background-color: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
+}
+
+.ui-tabs-anchor,
+.btn-icon-and-text,
+.scan-icon-and-text {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-icon-and-text:focus,
+.scan-icon-and-text:focus {
+    text-decoration: none;
+}
+
+.action-icon {
+    color: var(--muted-foreground);
+}
+
+.action-icon:hover {
+    cursor:pointer;
+    color: var(--foreground);
+}
+
+a > .material-symbols-outlined {
+    cursor: pointer;
+}
+
+.material-symbols-outlined.md-22 {
+    font-size: 22px;
+}
+
+#close_child_popup_link {
+    padding: 10px;
+    margin: -20px;
+}
+
+a {
+    cursor: pointer;
+}
+/* End - Helpsystem for the wizards */
+
+#configWizardForm .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0;
+}
+
+/* Switch Step 2 (watchguard and autodiscovery also use table-striped */
+.table-striped>tbody>tr>td,
+.table-hover>tbody>tr:hover>td,
+.table-striped>tbody>tr:nth-of-type(2n+1)>td {
+    color: var(--foreground);
+}
+.table-striped>thead>tr>th {
+    color: var(--muted-foreground);
+}
+.min-width-20em {
+    min-width: 0 !important;
+}
+.table-striped>thead>tr>th,
+.table-striped>tbody>tr>td,
+.table-striped tr {
+    border-color: var(--border);
+}
+.table-striped tr:hover td,
+.table-striped tr:hover th {
+    background-color: var(--secondary);
+}
+
+/* override style in base.bs5.css to align chevron */
+.btn-primary:not(.btn-icon) .material-symbols-outlined,
+.btn-outline-primary.btn-nagios:not(.btn-icon) .material-symbols-outlined {
+    margin-top: 0px;
+}
+
+/* Auto Discovery Wizard */
+.auto-disc-table-head {
+    color: var(--foreground);
+}
+
+.table-bordered-neptune {
+    border-color: var(--border);
+}
+
+/* EC2 Wizard */
+.btn-outline-primary { color: var(--primary-foreground); }
+
+/* radio button styles from neptune.cc */
+/* Base style for radio buttons */
+input[type="radio"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background-color: var(--input);
+    cursor: pointer;
+    margin-top: 2px;
+    padding: 2px;
+    margin-left: -25px !important;
+}
+
+input.neptune-centered-radio[type="radio"] {
+    margin-left: 0px !important;
+}
+
+input[type="radio"]:hover {
+    background-color: var(--background);
+}
+
+input[type="radio"]:focus {
+    outline: none;
+}
+
+input[type="radio"]:focus-visible {
+    outline-offset: 0;
+}
+
+input[type="radio"]:checked {
+    box-shadow: 0 0 0 1px var(--checkbox);
+    accent-color: var(--checkbox);
+    background-color: var(--checkbox);
+    border: 3.5px solid var(--background);
+}
+
+input[type="radio"]:active {
+    background-color: var(--primary-foreground);
+}
+
+/* Disabled style for radio buttons */
+input[type="radio"]:disabled {
+    background-color: var(--secondary); 
+    border-color: var(--border);
+    cursor: not-allowed;
+    opacity: 0.5; 
+}
+
+input[type="radio"]:disabled:hover {
+    background-color: var(--secondary); 
+    border-color: var(--border);
+    cursor: not-allowed;
+}
+
+input[type="radio"]:disabled:checked {
+    box-shadow: 0 0 0 1px var(--foreground);
+    accent-color: var(--foreground);
+    background-color: var(--foreground);
+    border: 3.5px solid var(--background);
+}

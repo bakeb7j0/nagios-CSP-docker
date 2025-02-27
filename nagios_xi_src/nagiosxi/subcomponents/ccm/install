@@ -1,0 +1,60 @@
+#!/bin/bash -e
+
+. ../../xi-sys.cfg
+
+echo "INSTALL: Nagios CCM is being installed..."
+
+# Force mysql commands (don't die on errors)
+mysqlforce=""
+if [ $FORCE -eq 1 ]; then
+    mysqlforce="--force"
+fi
+
+# See if database already exists
+echo "NOTE: If prompted, enter the MySQL root password"
+if mysql nagiosql -u root -p"$mysqlpass" -e 'SELECT COUNT(*) FROM tbl_host' &>/dev/null; then
+    echo "CCM database already exists - skipping creation..."
+else
+    # Select the sql file depending on MySQL version
+    sqlfile="create_db.sql"
+    if [ "$dist" == "el8" ] || [ "$dist" == "el9" ] || [ "$dist" == "ubuntu20" ] ||  [ "$dist" == "ubuntu22" ] || [ "$dist" == "ubuntu24" ]; then
+        sqlfile="create_db_mysql8.sql"
+    fi
+
+    sed -i "s/NAGIOSQLDEFAULTPASSWORD/$nagiosqlpass/" "db/$sqlfile"
+    sed -i "s/NAGIOSQLDEFAULTPASSWORD/$nagiosqlpass/" "../../nagiosxi/basedir/html/config.inc.php"
+
+    # Run SQL to create database and add user
+    mysql -u root -p"$mysqlpass" $mysqlforce < db/$sqlfile
+    mysql -u root -p"$mysqlpass" $mysqlforce nagiosql < db/schema.sql
+    mysql -u root -p"$mysqlpass" $mysqlforce nagiosql < db/schema_01.sql
+    mysql -u root -p"$mysqlpass" $mysqlforce nagiosql < db/schema_02.sql
+
+    # Hack: apparently we decided to apply schema_03.sql through schema_06.sql directly to schema.sql instead of applying all migrations
+    # at install time. I'm not going back and fixing it (yet) but we can at least do better going forward.
+    i=7
+    while [ $i -lt 99 ]; do
+        two_digit=$(printf "%02x" $i)
+        schema_name=schema_$two_digit.sql
+        if [ -f db/$schema_name ]; then
+            echo "Applying $schema_name..."
+            mysql -u root -p$mysqlpass $mysqlforce nagiosql < db/$schema_name
+        fi
+        ((i++))
+    done
+
+    # Load the data -after- all the table changes are made
+    mysql -u root -p"$mysqlpass" $mysqlforce nagiosql < db/load_db.sql
+fi
+
+# Check MySQL database
+echo "NOTE: If prompted, enter the MySQL root password"
+if mysql -u root -p"$mysqlpass" nagiosql -e "SELECT COUNT(*) FROM tbl_host" &>/dev/null; then
+    echo "CCM database appears OK"
+else
+    echo "ERROR: CCM database install appears to have failed - exiting."
+    exit 1
+fi
+
+# Things are okay
+echo "INSTALL: Nagios CCM installed OK."

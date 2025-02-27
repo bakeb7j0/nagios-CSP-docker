@@ -1,0 +1,29 @@
+--- nagios-4.5.3/cgi/Makefile.in
++++ nagios-4.5.3-modified/cgi/Makefile.in
+@@ -47,7 +47,7 @@ JSONFLAGS=-DJSON_NAGIOS_4X
+ LDFLAGS=@LDFLAGS@
+ LIBS=@LIBS@
+ 
+-CGIS=archivejson.cgi avail.cgi cmd.cgi config.cgi extinfo.cgi history.cgi notifications.cgi objectjson.cgi outages.cgi showlog.cgi status.cgi statusjson.cgi statuswml.cgi summary.cgi tac.cgi $(CGIEXTRAS)
++CGIS=archivejson.cgi avail.cgi cmd.cgi config.cgi extinfo.cgi history.cgi notifications.cgi objectjson.cgi outages.cgi showlog.cgi status.cgi statusjson.cgi statuswml.cgi summary.cgi tac.cgi tac-xml.cgi status-json.cgi outages-xml.cgi $(CGIEXTRAS)
+ 
+ # Object functions
+ ODATALIBS=objects-cgi.o xobjects-cgi.o
+@@ -144,12 +144,18 @@ notifications.cgi: $(srcdir)/notifications.c $(CGIDEPS)
+ outages.cgi: $(srcdir)/outages.c $(CGIDEPS) $(CDATADEPS)
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(srcdir)/outages.c $(CGILIBS) $(CDATALIBS) $(LIBS)
+ 
++outages-xml.cgi: $(srcdir)/outages-xml.c $(CGIDEPS) $(CDATADEPS)
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(srcdir)/outages-xml.c $(CGILIBS) $(CDATALIBS) $(LIBS)
++
+ showlog.cgi: $(srcdir)/showlog.c $(CGIDEPS)
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(srcdir)/showlog.c $(CGILIBS) $(LIBS)
+ 
+ status.cgi: $(srcdir)/status.c $(CGIDEPS) $(CDATADEPS)
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(srcdir)/status.c $(CGILIBS) $(CDATALIBS) $(LIBS)
+ 
++status-json.cgi: $(srcdir)/status-json.c $(CGIDEPS) $(CDATADEPS)
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(srcdir)/status-json.c $(CGILIBS) $(CDATALIBS) $(LIBS)
++
+ statuswml.cgi: $(srcdir)/statuswml.c $(CGIDEPS)
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(srcdir)/statuswml.c $(CGILIBS) $(LIBS)

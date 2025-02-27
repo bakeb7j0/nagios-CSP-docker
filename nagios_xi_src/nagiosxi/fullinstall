@@ -1,0 +1,303 @@
+#!/bin/bash -e
+
+# Set up system variables
+./init.sh
+. ./xi-sys.cfg
+. ./functions.sh
+
+# Explicitly set umask
+umask 0022
+
+# Install log
+log="install.log"
+
+# Installation is interactive by default
+export INTERACTIVE="True"
+# INSTALL_PATH is current dir for use in making install dir independent
+export INSTALL_PATH=`pwd`
+# we wont tune mysql unless we're the ones installing it
+export TUNE_MYSQL="False"
+
+# Force the install even if the XI directory exists
+export FORCE=0
+
+if ! path_is_ok; then
+	echo "Your system \$PATH does not include /sbin and /usr/sbin."
+	echo "Adding /sbin and /usr/sbin to \$PATH."
+	PATH="$PATH:/usr/sbin:/sbin"
+fi
+
+# Parse command line
+while [ -n "$1" ]; do
+	case "$1" in
+		-h | --help)
+			usage_install
+			exit 0
+			;;
+		-v | --version)
+			sed -n '/full/ s/.*=//p' "${0%/*}/nagiosxi/basedir/var/xiversion"
+			exit 0
+			;;
+		-n | --non-interactive)
+			export INTERACTIVE="False"
+			;;
+		-p | --mysql-password)
+			mysqlpass="$2"
+			./xivar mysqlpass "$2"
+			shift
+			;;
+		-o | --offline-install)
+			echo "Offline installs now use RPMs. Instructions are at: https://repo.nagios.com/?repo=offline"
+			exit 0
+			;;
+	    -f | --force)
+			export FORCE=1
+			;;
+		*)
+			echo "Unknown option:  $1" >&2
+			usage_install >&2
+			exit 1
+	esac
+	shift
+done
+
+# Verify that XI is not already installed
+if [ -d /usr/local/nagiosxi/html ]; then
+	if [ $FORCE -eq 0 ]; then
+		echo "Error: It looks like Nagios XI is already installed in /usr/local/nagiosxi. If you know what"
+		echo "you're doing you can run the installer with -f or --force to run the install."
+		exit 1;
+	fi
+fi
+
+# RHEL 9.0 needs an update to pcre2, or the install breaks.
+# Simplest fix it to ask if we can update the system.
+if [ "$distro" == "RedHatEnterpriseServer" ] && [ "$dist" == "el9" ]; then
+	if [[ $INTERACTIVE == "True" ]]; then
+		cat <<-EOF
+
+		==============================
+		IMPORTANT: RHEL 9 Notification
+		==============================
+		Updated packages are required to install Nagios XI.
+
+		EOF
+
+		read -p "Update your system, now? [Y/n] " response
+
+		case "$response" in
+			Y | y | "")
+				echo "Updating system..."
+				yum -y update
+				;;
+			*)
+				;;
+		esac
+	else
+		echo "Updating system..."
+		yum -y update
+	fi
+fi
+
+if [ "$INTERACTIVE" = "True" ]; then
+	# CentOS, RedHat, Raspbian, Ubuntu, Debian, openSUSE, or SUSE Enterprise
+	fmt -s -w $(tput cols) <<-EOF
+		========================
+		Nagios XI Full Installer
+		========================
+
+		This script will do a complete install of Nagios XI by executing all necessary sub-scripts.
+
+		IMPORTANT: This script should only be used on a 'clean' install of CentOS, RHEL, Ubuntu LTS, Debian, or Oracle. Do NOT use this on a system that has been tasked with other purposes or has an existing install of Nagios Core. To create such a clean install you should have selected only the base package in the OS installer.
+	EOF
+	read -p "Do you want to continue? [Y/n] " res
+
+	case "$res" in
+		Y | y | "")
+			echo "Proceeding with installation..."
+			;;
+		*)
+			echo "Installation cancelled"
+			exit 0
+	esac
+fi
+
+echo "Checking MySQL credentials..."
+
+# Check Mysql root password if MySQL is already installed and running...
+if service $mysqld status &>/dev/null; then
+	# Test for null MySQL root password
+	if mysqlshow -u root &>/dev/null; then
+		echo "After installation your MySQL root password will be set to a random password."
+	elif mysqlshow -u root -p"$mysqlpass" &>/dev/null; then
+		echo "Entered MySQL password validated."
+	else
+		for i in 1 2 3; do
+			if [ "$INTERACTIVE" = "True" ]; then
+				echo "Enter the MySQL root password to continue..."
+				read -p "MySQL Root Password: " pass
+			fi
+
+			# Test the password
+			if mysqlshow -u root -p"$pass" &>/dev/null; then
+				echo "Password validated."
+				mysqlpass="$pass"
+
+				# Update xi-sys.cfg with MySQL password for later use by subcomponent install
+				if ! ./xivar mysqlpass "$mysqlpass"; then
+					echo "ERROR: Failed to update xi-sys.cfg with MySQL password - exiting." >&2
+					exit 1
+				fi			
+
+				break
+			else
+				echo "Password failed." >&2
+				[ $i -eq 3 ] && exit 1
+			fi
+		done
+	fi
+else
+	echo "MySQL not yet installed - that's okay."
+	export TUNE_MYSQL="True"
+fi
+
+# nagiosxi password
+if [ -z "$nagiosxipass" ]; then
+	if [ "$INTERACTIVE" = "True" ]; then
+		echo "Enter a password to use for the MySQL nagiosxi user, a random string will be chosen if one is not entered..."
+		read -t 60 -p "MySQL nagiosxi Password: " nagiosxipass || true
+	fi
+	# If it's still empty (user didn't enter password)
+	if [ -z "$nagiosxipass" ]; then
+		nagiosxipass="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 20)"
+	fi
+fi
+echo "The MySQL nagiosxi password will be $nagiosxipass"
+if ! ./xivar nagiosxipass "$nagiosxipass"; then
+	echo "ERROR: Failed to update xi-sys.cfg with nagiosxi password - exiting." >&2
+	exit 1
+fi
+
+# dbmaint_nagiosxi password
+if [ -z "$dbmaintpass" ]; then
+	if [ "$INTERACTIVE" = "True" ]; then
+		echo "Enter a password to use for the MySQL dbmaint_nagiosxi user, a random string will be chosen if one is not entered..."
+		read -t 60 -p "MySQL dbmaint_nagiosxi Password: " dbmaintpass || true
+	fi
+	if [ -z "$dbmaintpass" ]; then
+		dbmaintpass="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 20)"
+	fi
+fi
+echo "The MySQL dbmaint_nagiosxi password will be $dbmaintpass"
+if ! ./xivar dbmaintpass "$dbmaintpass"; then
+	echo "ERROR: Failed to update xi-sys.cfg with dbmaint_nagiosxi password - exiting." >&2
+	exit 1
+fi			
+
+# nagiosql password
+if [ -z "$nagiosqlpass" ]; then
+	if [ "$INTERACTIVE" = "True" ]; then
+		echo "Enter a password to use for the MySQL nagiosql user, a random string will be chosen if one is not entered..."
+		read -t 60 -p "MySQL nagiosql Password: " nagiosqlpass || true
+	fi
+	if [ -z "$nagiosqlpass" ]; then
+		nagiosqlpass="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 20)"
+	fi
+fi
+echo "The MySQL nagiosql password will be $nagiosqlpass"
+if ! ./xivar nagiosqlpass "$nagiosqlpass"; then
+	echo "ERROR: Failed to update xi-sys.cfg with nagiosql password - exiting." >&2
+	exit 1
+fi			
+
+# ndoutils password
+if [ -z "$ndoutilspass" ]; then
+	if [ "$INTERACTIVE" = "True" ]; then
+		echo "Enter a password to use for the MySQL ndoutils user, a random string will be chosen if one is not entered..."
+		read -t 60 -p "MySQL ndoutils Password: " ndoutilspass || true
+	fi
+	if [ -z "$ndoutilspass" ]; then
+		ndoutilspass="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 20)"
+	fi
+fi
+echo "The MySQL nagiosql password will be $ndoutilspass"
+if ! ./xivar ndoutilspass "$ndoutilspass"; then
+	echo "ERROR: Failed to update xi-sys.cfg with ndoutils password - exiting." >&2
+	exit 1
+fi			
+
+# Initialize install.log
+cat >>"$log" <<-EOF
+	Nagios XI Installation Log
+	==========================
+	DATE: $(date)
+
+	DISTRO INFO:
+	$distro
+	$version
+	$architecture
+
+EOF
+
+{
+if [ ! -f "$proddir/var/xiversion" ]; then
+	echo "THIS IS A NEW INSTALL!"
+else
+	echo "THIS IS AN UPGRADE!"
+	echo
+	echo "OLD VERSION:"
+	grep -v "#" "$proddir/var/xiversion"
+fi
+echo
+echo "INSTALLING:"
+grep -v "#" nagiosxi/basedir/var/xiversion
+echo
+} >>"$log"
+
+
+# Install the subcomponents
+run_sub ./00-repos noupdate
+run_sub ./01-prereqs
+run_sub ./02-usersgroups
+run_sub ./03-dbservers
+run_sub ./04-services
+run_sub ./05-sudoers
+run_sub ./06-firewall
+run_sub ./07-selinux
+run_sub ./08-dbbackups
+run_sub ./09-sourceguardian
+run_sub ./10-phpini
+run_sub ./11-subcomponents
+run_sub ./12-mrtg
+run_sub ./13-installxi
+run_sub ./14-cronjobs
+run_sub ./15-chkconfigalldaemons
+run_sub ./16-importnagiosql
+run_sub ./17-startdaemons
+run_sub ./18-webroot
+
+echo >>"$log"
+echo "Install complete!" >>"$log"
+ 
+
+# Get IP address
+ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet[^6]/{print substr($2,0)}' | sed 's|/.*||')
+if [ "$ip" == "" ]; then
+    ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet6/{print substr($2,0)}' | sed 's|/.*||')
+    if [ "$ip" == "" ];then
+    	ip="<HOSTNAME>"
+    else
+    	ip="[$ip]"
+    fi
+fi
+
+cat <<-EOF
+
+	Nagios XI Installation Complete!
+	--------------------------------
+
+	You can access the Nagios XI web interface by visiting:
+	    http://${ip}/nagiosxi/
+
+EOF
+

@@ -1,0 +1,3 @@
+08/15/2023
+===================
+- Added @localhost to mail validation for PHPMailer.php::PHPMailer::validateAddress [GL:XI#229] - BB

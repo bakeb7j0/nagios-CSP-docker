@@ -1,0 +1,5 @@
+1.2.0 - 05/28/2024
+==================
+- Initialized changelog - GW
+- Updated for Neptune and updated required version - GW
+- Fixed PHP 8 deprecation warnings - DA

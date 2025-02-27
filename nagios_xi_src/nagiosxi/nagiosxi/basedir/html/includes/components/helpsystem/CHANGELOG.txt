@@ -1,0 +1,8 @@
+2.0.3 - 08/06/2024
+==================
+- Updated links for improved SEO [GL:XI#1076] - GW
+
+2.0.2 - 04/26/2024
+==================
+- Initialized changelog - GW
+- Removed unuvailable videos [GL:XI#948] - GW

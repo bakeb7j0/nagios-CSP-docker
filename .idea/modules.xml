@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/nagios-CSP-docker.iml" filepath="$PROJECT_DIR$/.idea/nagios-CSP-docker.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../nagios-core-docker/.idea/nagios-core-docker.iml" filepath="$PROJECT_DIR$/../../nagios-core-docker/.idea/nagios-core-docker.iml" />
     </modules>
   </component>
 </project>

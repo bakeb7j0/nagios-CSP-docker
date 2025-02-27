@@ -1,0 +1,8 @@
+1.0.1 - 08/06/2024
+==================
+- Fixed issue where LDAP would not show users properly - AC
+
+1.0.0 - 05/28/2024
+==================
+- Initialized changelog and version number - GW
+- Updated required version - GW

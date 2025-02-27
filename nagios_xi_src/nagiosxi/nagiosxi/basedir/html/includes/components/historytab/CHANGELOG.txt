@@ -1,0 +1,42 @@
+3.0.0 - 05/28/2024
+==================
+- Added and updated History tab as an official XI component - LG
+
+2.0.0 - 11/03/2015
+==================
+- Added code for a History Icon to appear to make it compatible with Nagios XI 5
+
+1.1.1 - 05/21/2015
+==================
+- Stopped duplicate Scheduled Downtime messages from being displayed (reported by snapon_admin)
+
+1.1.0 - 05/20/2015
+==================
+- Added Scheduled Downtime comments (requested by snapon_admin, Fred Kroeger)
+- Added history on the following external commands (requested by Fred Kroeger):
+  * Active Checks enabled/disabled
+  * Passive Checks enabled/disabled
+  * Notifications enabled/disabled
+  * Flap Detection enabled/disabled
+  * Event Handler enabled/disabled
+  * Obsession enabled/disabled
+
+1.0.4 - 02/15/2015
+==================
+- Fixed bug that prevented Performance Graphs tab from showing graphs on some versions of XI
+
+1.0.3 - 02/06/2015
+==================
+- Fixed bug that prevented History tab from showing results on newly deployed versions of XI 2014 (reported by aeidt4 and westernuniv ... fixed by Scott Wilkerson)
+
+1.0.2 - 07/09/2014
+==================
+- Component now only shows the last 25 entries but has options to show more entries if required (requested by Willem D’Haese)
+
+1.0.1 - 11/30/2011
+==================
+- mgutherie@Nagios fixed a missing form tag (would cause an issue with any tabs that came after the History tab). Credit also goes to BenLiyanage for identifying this earlier on but I forgot to make the corrections
+
+1.0.0 - 07/07/2011
+==================
+- Initial release

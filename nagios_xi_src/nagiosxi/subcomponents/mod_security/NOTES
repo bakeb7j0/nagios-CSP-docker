@@ -1,0 +1,9 @@
+## Some Notes on ModSecurity
+A hypothetical upgrade on the CRS would involve:
+1. Download the new tarball. 
+2. Untar
+3. Move over the plugins folder. 
+4. Move over `REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf`
+5. Move over `RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf`
+6. Updating versions in install files. 
+7. Testing applications for any new exlusions you have to add

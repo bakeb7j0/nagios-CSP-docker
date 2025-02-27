@@ -1,0 +1,91 @@
+:root {
+    --background: #131B25;
+    --foreground: #E1E7EF;
+    --card: #0E141B;
+    --card-foreground: #E1E7EF;
+    --popover: #0E141B;
+    --popover-foreground: #E1E7EF;
+    --primary: #4D89f9;
+    --primary-hover: #4d89f9;
+    --primary-foreground: #070A0D;
+    --secondary: #1A2533;
+    --secondary-hover: #1f2c3d;
+    --secondary-foreground: #E1E7EF;
+    --muted: #2a3b51;
+    --muted-foreground: #94a3b8;
+    --secondary-muted-foreground: #778290;
+    --accent: #07213b;
+    --accent-foreground: #A4CCF4;
+    --destructive: #EF4444;
+    --destructive-foreground: #000000;
+    --border: #2a3b51;
+    --input: #0E141B;
+    --ring: #1867b6;
+    --table-header: #7e95b9;
+    --checkbox: #E1E7EF;
+    --radius: 5px;
+    --rounded-border-radius: 5px;
+
+    --md-ok: #00EE5F;
+    --md-critical: #E24646;
+    --md-unknown: #F5A622;
+    --md-warning: #ECFD20;
+    --md-pending: #FFFFFF;
+    --md-unreachable: #F5A622;
+    --md-unhandled: #F9CB7B;
+    --md-problem: #FDEED3;
+
+    --color-okay: #00EE5F;
+    --color-okay-secondary: #66BB6A;
+    --color-control-on: #0f940f;
+    --color-success-border: #297a25;
+    --color-success-msg: #b6e5ab;
+    --color-unknown: #F5A622;
+    --color-warning: #ECFD20;
+    --color-warning-header: #FFEE58;
+    --color-critical: #FF0000;
+    --color-critical-lite: #ffaeae;
+    --color-critical-header: #EF5350;
+
+    --mono-text: #B5C4D9;
+    --text-muted-light:  #97ADC9;
+    --table-anchor: #7896BA;
+    --dashlet-subtext: #7896BA;
+    --dashlet-anchor-hover: #5B7EAA;
+    --wizard-form-disabled: #5B7EAA;
+    --placeholder-text: #395170;
+    --form-bg-hover: #395170;
+
+    --info-msg-text: #89BDF1;
+    --info-msg-border: #1866B6;
+    --info-msg-bg: #041220;
+
+    --nagios-blue:#4D89f9;
+    --series-dashlet: #69abec;
+
+    --success-msg-text: #40DE7A;
+    --success-msg-border: #147538;
+    --success-msg-bg: #04160A;
+    --success: #22C55E;
+
+    --warning-msg-text-hover: #FFFEE5;
+    --warning-msg-text: #FFF948;
+    --warning-msg-border: #706C00;
+    --warning-msg-bg: #191900;
+
+    --error-msg-text-hover: #FDECEC;
+    --error-msg-text: #F9B4B5;
+    --error-msg-text-secondary: #F26969;
+    --error-msg-border: #710B09;
+    --danger-btn: #710B09;
+    --error-msg-bg: #1C0202;
+
+    --cp-chart-background: transparent;
+    --cp-chart-border: hsl(213.85, 31.71%, 24.12%);
+    --cp-muted-foreground: hsl(215, 20.2%, 65.1%);
+    --cp-input: hsl(212.31, 31.71%, 8.04%);
+}
+
+.neptune-drawer-options select {
+    background-image: url('../../../images/select-dropdown.svg') !important;
+}

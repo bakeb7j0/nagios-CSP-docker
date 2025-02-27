@@ -1,0 +1,104 @@
+#!/bin/sh -e
+
+# Check to make sure we aren't running a normal upgrade on an RPM/offline install
+echo "Checking install type..."
+if command -v "rpm" &> /dev/null && rpm -q nagiosxi &> /dev/null; then
+	if dnf repolist | grep -q "nagios"; then
+		echo "rpm" > /usr/local/nagiosxi/var/xi-itype
+	else
+		echo "offline" > /usr/local/nagiosxi/var/xi-itype
+	fi
+else
+	# Whenever we get a way to differentiate source and ova, then put that check here
+	echo "source" > /usr/local/nagiosxi/var/xi-itype
+fi
+installtype=$(</usr/local/nagiosxi/var/xi-itype)
+echo "Install type: $installtype"
+
+if [ "$installtype" = "source" ]; then
+    echo "================================================================"
+	echo "ERROR: Source/tarball installation detected!"
+    echo "You are attempting to upgrade using the Offline upgrade script."
+	echo "================================================================"
+    echo ""
+    echo "Please follow the source upgrade process."
+	echo "For more information, refer to the following documentation:"
+	echo "https://assets.nagios.com/downloads/nagiosxi/docs/XI-Upgrade-Instructions.pdf"
+    echo ""
+	exit 1
+fi
+if [ "$installtype" = "ova/vhd" ]; then
+    echo "==============================================================="
+	echo "ERROR: OVA/VHD installation detected!"
+    echo "You are attempting to upgrade using the Offline upgrade script."
+	echo "==============================================================="
+    echo ""
+	echo "DANGER: OVA/VHD images are intented for evaluation, not production use."
+    echo ""
+	echo "We provide our OVA images as a convenience and they are not indented for production use. The virtual"
+	echo "machine images are not considered official distributions and only the Nagios Software contained within the"
+	echo "image is an official distribution. We provide them to enable our customers to quickly bootstrap and evaluate"
+	echo "our product. They are provided “as is” without warranty of any kind and we do not manage and/or maintain the"
+	echo "image after creation. You are welcome to use our OVA in production if you like however we do not support the"
+	echo "operating system nor any alterations to the underlying dependencies/components. If you want to upgrade the"
+	echo "version of Nagios XI on one of our images you want to follow our normal instructions for upgrading Nagios XI: "
+    echo ""
+	echo "https://assets.nagios.com/downloads/nagiosxi/docs/XI-Upgrade-Instructions.pdf"
+    echo ""
+	exit 1
+fi
+# We will eventually change this to only allow offline, but for now we have to update the xi-itype
+if  [ "$installtype" = "rpm" ]; then
+	echo "offline" > /usr/local/nagiosxi/var/xi-itype
+fi
+
+echo ""
+echo "Installation check passed."
+
+# Import gpg key
+if [ ! -f /etc/pki/rpm-gpg/GPG-KEY-NAGIOS-V3 ]; then
+	/bin/cp -f GPG-KEY-NAGIOS-V3 /etc/pki/rpm-gpg/GPG-KEY-NAGIOS-V3
+	rpm --import GPG-KEY-NAGIOS-V3
+fi
+
+# Removed the individual localinstalls as they will all be done anyways on line 12 -AC
+# BIG OFFLINE - DA
+
+tempdir=$(mktemp -d)
+
+echo "[offline-nagiosxi]
+name=Offline - nagiosxi
+baseurl=file://$tempdir/offline-nagiosxi/
+enabled=0
+module_hotfixes=1
+gpgcheck=0" >  /etc/yum.repos.d/offline-nagiosxi.repo
+
+cp -r offline-nagiosxi "$tempdir/"
+
+dnf clean all
+dnf --disablerepo=\* --enablerepo=offline-nagiosxi install nagiosxi --allowerasing
+
+# Clean up
+rm -f /etc/yum.repos.d/offline-nagiosxi.repo
+rm -rf $tempdir
+
+# Get IP address
+ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet[^6]/{print substr($2,0)}' | sed 's|/.*||')
+if [ "$ip" == "" ]; then
+    ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet6/{print substr($2,0)}' | sed 's|/.*||')
+    if [ "$ip" == "" ];then
+    	ip="<HOSTNAME>"
+    else
+    	ip="[$ip]"
+    fi
+fi
+
+cat <<-EOF
+
+	Nagios XI Upgrade Complete!
+	---------------------------
+
+	You can access the Nagios XI web interface by visiting:
+	    http://$ip/nagiosxi/
+	
+EOF

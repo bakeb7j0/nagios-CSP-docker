@@ -1,0 +1,125 @@
+---
+
+# Check Ansible can read system info (some versions can't determine OS for newer OS)
+
+- name: Check if Ansible can read System Info
+  fail:
+    msg: "Ansible version on the Nagios XI system is too low to deploy to this host"
+  when: ansible_os_family is not defined
+
+# Download NCPA 3
+
+- name: Download NCPA (RPM based distros)
+  get_url:
+    url: https://assets.nagios.com/downloads/ncpa3/ncpa-latest-1.x86_64.rpm
+    dest: /tmp/ncpa.rpm
+    force: yes
+  when: (ansible_os_family == "RedHat" and ansible_architecture == "x86_64") or
+    (ansible_os_family == "Suse" and ansible_architecture == "x86_64")
+
+- name: Download NCPA (DEB based distros)
+  get_url:
+    url: https://assets.nagios.com/downloads/ncpa3/ncpa-latest-1.amd64.deb
+    dest: /tmp/ncpa.deb
+    force: yes
+  when: ansible_os_family == "Debian" and ansible_architecture == "x86_64"
+
+# Get Installed Package Facts
+- name: Get Package Facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+# Install NCPA
+
+- name: Install NCPA (RedHat & CentOS)
+  shell: yum localinstall ncpa.rpm -y
+  args:
+    chdir: /tmp
+  when: ansible_os_family == "RedHat"
+
+- name: Install NCPA (Debian & Ubuntu)
+  apt:
+    deb: /tmp/ncpa.deb
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install NCPA (SUSE & OpenSUSE)
+  zypper:
+    name: /tmp/ncpa.rpm
+    disable_gpg_check: yes
+    state: present
+  when: ansible_os_family == "Suse"
+
+# Set NCPA Token
+
+- name: Set NCPA Token
+  lineinfile:
+    dest: /usr/local/ncpa/etc/ncpa.cfg
+    regexp: ^community_string
+    line: "community_string = {{ ncpa_token }}"
+
+- name: Restart NCPA
+  service:
+    name: ncpa
+    state: restarted
+    enabled: yes
+
+# Configure Firewall
+
+- name: Check if UFW is installed on Ubuntu
+  command: which ufw
+  register: ufw_installed
+  failed_when: false
+  changed_when: false
+  when: ansible_distribution == "Ubuntu"
+
+- name: Open NCPA Port (Ubuntu)
+  ufw:
+    state: enabled
+    policy: allow
+    proto: any
+    rule: allow
+    to_port: 5693
+  when: ansible_distribution == "Ubuntu" and "ufw" in ansible_facts.packages
+
+- name: Open NCPA Port (CentOS & RHEL 6)
+  iptables:
+    chain: INPUT
+    jump: ACCEPT
+    destination_port: 5693
+    protocol: tcp
+    action: insert
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 6
+
+- name: Save iptables Config (CentOS & RHEL 6)
+  command: service iptables save
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int == 6
+
+- name: Check if firewalld is installed (RedHat & CentOS 7, 8)
+  package_facts:
+    manager: "auto"
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int != 6
+
+- name: Open NCPA Port (RedHat & CentOS 7, 8)
+  firewalld:
+    port: 5693/tcp
+    immediate: yes
+    permanent: yes
+    state: enabled
+    offline: yes
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int != 6 and 'firewalld' in ansible_facts.packages
+
+# Remove temp NCPA file
+
+- name: Clean up temp files (rpm)
+  file:
+    path: /tmp/ncpa.rpm
+    state: absent
+  when: ansible_os_family == "RedHat" or ansible_os_family == "Suse"
+
+- name: Clean up temp files (deb)
+  file:
+    path: /tmp/ncpa.deb
+    state: absent
+  when: ansible_os_family == "Debian"

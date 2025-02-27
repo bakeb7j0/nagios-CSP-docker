@@ -1,0 +1,21 @@
+/usr/local/nagiosxi(/.*)?           system_u:object_r:nagios_content_t:s0
+/usr/local/nagiosxi/etc(/.*)?       system_u:object_r:nagios_etc_t:s0
+/usr/local/nagiosxi/var(/.*)?       system_u:object_r:nagios_log_t:s0
+
+/home/nagios                        system_u:object_r:nagios_content_t:s0
+/usr/local/nagios(/.*)?             system_u:object_r:nagios_content_t:s0
+/usr/local/nagios/bin(/.*)?         system_u:object_r:nagios_exec_t:s0
+/usr/local/nagios/etc(/.*)?         system_u:object_r:nagios_etc_t:s0
+/usr/local/nagios/var(/.*)?         system_u:object_r:nagios_log_t:s0
+/usr/local/nagios/var/rw(/.*)?      system_u:object_r:nagios_content_t:s0
+
+/usr/local/nagvis(/.*)?             system_u:object_r:nagios_content_t:s0
+/usr/local/nrdp(/.*)?               system_u:object_r:nagios_content_t:s0
+/usr/local/nsis(/.*)?               system_u:object_r:nagios_content_t:s0
+
+/usr/share/snmp/mibs(/.*)?          system_u:object_r:snmpd_var_lib_t:s0
+/etc/snmp(/.*)?                     system_u:object_r:snmpd_var_lib_t:s0
+
+/etc/openldap/cacerts(/.*)?         system_u:object_r:slapd_cert_t:s0
+
+/usr/lib/chromium-browser/chromium-browser     system_u:object_r:httpd_unconfined_script_exec_t:s0

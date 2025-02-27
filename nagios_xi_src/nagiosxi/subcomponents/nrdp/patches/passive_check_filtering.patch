@@ -1,0 +1,12 @@
+--- nagioscorepassivecheck.inc.php.bak	2024-07-16 11:29:09.491504023 -0500
++++ nagioscorepassivecheck.inc.php	2024-07-16 11:29:15.229453587 -0500
+@@ -224,6 +224,9 @@
+     $check_result_contents .= "return_code={$state}\n";
+     $check_result_contents .= "output=${output}\\n\n";
+ 
++    // hack: prevent injection in process_perfdata.pl -swolf 2024-07-16
++    $check_result_contents = str_replace("\t", " ", $check_result_contents);
++
+     // put check result into the check file    
+     file_put_contents($check_file, $check_result_contents);
+ 

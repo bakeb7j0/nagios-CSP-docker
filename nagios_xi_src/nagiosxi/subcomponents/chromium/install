@@ -1,0 +1,17 @@
+#!/bin/bash -e
+
+. ../../xi-sys.cfg
+
+if [ "$distro" == "Ubuntu" ]; then
+    # Installing the apt package also adds the chromium-browser command, installs as snap
+    apt install -y xdg-utils chromium-browser
+    # Enabling linger allows the cron user to effectively run as nagios with snaps
+    # https://forum.snapcraft.io/t/system-slice-cron-service-is-not-a-snap-cgroup/30196/5
+    loginctl enable-linger $nagiosuser
+elif [ "$distro" == "Debian" ]; then
+    apt -y install chromium
+    ln -s $(which chromium) /bin/chromium-browser
+else
+    yum -y install chromium chromium-headless
+fi
+echo "INSTALL: Chromium installed OK."

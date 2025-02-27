@@ -1,0 +1,7 @@
+alert_history
+custom-dashlet
+modern_gauge
+rss_dashlet
+highchart-dashlet
+snmptraps
+modern_gauge

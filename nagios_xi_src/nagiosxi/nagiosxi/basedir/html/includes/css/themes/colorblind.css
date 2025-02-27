@@ -1,0 +1,30 @@
+:root {    
+    --color-okay: #56B4E9;
+    --color-okay-outline: #56B4E9 !important;
+    --color-okay-secondary: #56B4E9 !important;
+    --color-control-on: #56B4E9 !important;
+    --color-success-border: #15425c;
+    --color-success-msg: #56B4E9;
+    --color-unknown: #F0E442;
+    --color-unknown-outline: #F0E442 !important;
+    --color-warning: #D55E00;
+    --color-warning-outline: #D55E00 !important;
+    --color-warning-header: #D55E00;
+    --color-critical: #CC79A7;    
+    --color-critical-outline: #CC79A7 !important;
+    --color-critical-header: #CC79A7 !important;
+    --color-critical-lite: #FD9CD2;
+    --color-error-msg: #CC79A7;
+    --color-error-border: #c69;     
+}
+
+/* custom styles for this theme */
+.hc-text {
+    color: #23527c !important;
+}
+
+.hc-text:hover {
+    color: black !important;
+}
+
+#help_up_to_date { background-color: var(--color-okay); }

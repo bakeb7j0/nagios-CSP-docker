@@ -1,0 +1,1713 @@
+#!/bin/bash -e
+
+# Add variables from pre existing xivar
+if [ -f "/usr/local/nagiosxi/var/xi-sys.cfg" ]; then
+	cp -f /usr/local/nagiosxi/var/xi-sys.cfg ./xi-sys.cfg
+fi
+
+# Set up system variables
+./init.sh
+. ./xi-sys.cfg
+. ./functions.sh
+
+# Ensure these passwords are also in xi-sys.cfg
+./xivar nagiosxipass "$cfg__db_info__nagiosxi__pwd"
+./xivar nagiosqlpass "$cfg__db_info__nagiosql__pwd"
+./xivar ndoutilspass "$cfg__db_info__ndoutils__pwd"
+# No dbmaint password yet
+if [ -z "$cfg__db_info__nagiosxi__dbmaint_pwd" ]; then
+	dbmaintpass="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 20)"
+	./xivar dbmaintpass "$dbmaintpass"
+else
+	./xivar dbmaintpass "$cfg__db_info__nagiosxi__dbmaint_pwd"
+fi
+
+# Explicitly set umask
+umask 0022
+
+BASEDIR=$(dirname "$0")
+
+# Set up XI config dbservers with non-standard ports
+if [ "$cfg__db_info__nagiosxi__dbserver" != "x$cfg__db_info__nagiosxi__dbserver" ]; then
+	cfg__db_info__nagiosxi__dbserver="${cfg__db_info__nagiosxi__dbserver/:/ -P }"
+fi
+if [ "$cfg__db_info__nagiosql__dbserver" != "x$cfg__db_info__nagiosql__dbserver" ]; then
+	cfg__db_info__nagiosql__dbserver="${cfg__db_info__nagiosql__dbserver/:/ -P }"
+fi
+if [ "$cfg__db_info__ndoutils__dbserver" != "x$cfg__db_info__ndoutils__dbserver" ]; then
+	cfg__db_info__ndoutils__dbserver="${cfg__db_info__ndoutils__dbserver/:/ -P }"
+fi
+
+# Subcomponents that may need to be recompiled, flags set so it's only done once per upgrade
+UPDATE_CORE=0
+UPDATE_NDO=0
+UPDATE_MRTG=0
+UPDATE_PNP=0
+UPDATE_PLUGINS=0
+UPDATE_NRPE=0
+UPDATE_NSCA=0
+UPDATE_NRDP=0
+UPDATE_ADDONS=0
+UPDATE_SUDOERS=0
+UPDATE_PHANTOMJS=0
+UPDATE_LOGROTATE=0
+
+export INSTALL_PATH=`pwd`
+if [ "x$INTERACTIVE" = "x" ]; then
+    export INTERACTIVE="True"
+fi
+if [ "x$FORCE_ADDON_UPGRADE" = "x" ]; then
+    export FORCE_ADDON_UPGRADE=0
+fi
+
+# Parse command line
+while [ -n "$1" ]; do
+	case "$1" in
+		-h | --help)
+			usage_upgrade
+			exit 0
+			;;
+		-v | --version)
+			sed -n '/full/ s/.*=//p' "${0%/*}/nagiosxi/basedir/var/xiversion"
+			exit 0
+			;;
+		-n | --non-interactive)
+			export INTERACTIVE="False"
+			;;
+		-p | --mysql-password)
+			mysqlpass="$2"
+			./xivar mysqlpass "$2"
+			shift
+			;;
+		-o | --offline-install)
+			echo "Offline installs now use RPMs. Upgrade instructions are at: https://answerhub.nagios.com/support/s/article/Installing-Nagios-XI-2024-in-an-Offline-Environment-5423fcb3"
+			exit 0
+			;;
+	    -f | --force)
+			export FORCE=1
+			;;
+		*)
+			echo "Unknown option:  $1" >&2
+			usage_upgrade >&2
+			exit 1
+	esac
+	shift
+done
+
+
+# As of XI 2024R1, there will be no more PostgresQL support!!!
+if [ "$cfg__db_info__nagiosxi__dbtype" == "pgsql" ]; then
+	echo "-------------------------------"
+	echo " Removal of PostgreSQL Support "
+	echo "-------------------------------"
+	echo ""
+	echo "Nagios XI no longer supports PostgreSQL."
+	echo "To upgrade to this version of Nagios XI, please migrate your database to use MySQL or MariaDB, "
+	echo "preferably the version supported by your Linux distribution. As part of migrating the database "
+	echo "to upgrade to this Nagios XI version, we recommend upgrading first to Nagios XI version 5.11.3. "
+	echo "Then either open a ticket with Nagios support (support@nagios.com) or run the script at "
+	echo "pg2mysql/convert_nagiosxi_to_mysql.php. "
+	echo ""
+	echo "For more information, please visit the support forum:"
+	echo "https://support.nagios.com/forum/"
+	echo ""
+	exit 1
+fi
+
+# Stop if it is not a supported distro
+case "$dist" in
+    el8 )
+        if [ "$distro" == "CentOS" ]; then
+            echo "CentOS Stream 8 is no longer supported due to end of life."
+            exit 1
+        fi
+        :
+        ;;
+    el9 )
+        :
+        ;;
+    ubuntu20 | ubuntu22 | ubuntu24 )
+        :
+        ;;
+    debian11 | debian12 )
+        :
+        ;;
+    el5 | el6 | el7 | ubuntu14 | ubuntu16 | ubuntu18 | debian8 | debian9 )
+		echo "------------------------------" >&2
+		echo " Distro End of Life" >&2
+		echo "------------------------------" >&2
+		echo "" >&2
+		echo "Nagios XI no longer supports this distro due to it being EOL." >&2
+		echo "If you'd like to upgrade your Nagios XI past 2024R1.1.5, you will need to install it on" >&2
+		echo "one of the following distros:" >&2
+        echo "  CentOS Stream 9, RHEL or Oracle 8, 9" >&2
+        echo "  Ubuntu 20.04 LTS, 22.04 LTS, or 24.04 LTS" >&2
+        echo "  Debian 11 or 12" >&2
+		echo "" >&2
+		echo "For more information on how to transition, please visit the support forum:" >&2
+		echo "https://support.nagios.com/forum/" >&2
+        exit 1
+        ;;
+    *)
+        echo "$dist is not currently supported. Please use one of the following distros:" >&2
+        echo "  CentOS Stream 9, RHEL or Oracle 8, 9" >&2
+        echo "  Ubuntu 20.04 LTS, 22.04 LTS, or 24.04 LTS" >&2
+        echo "  Debian 11 or 12" >&2
+        exit 1
+esac
+
+
+if [ "$distro" != "Ubuntu" ] && [ "$distro" != "Debian" ]; then
+
+    if rpm -q nagiosxi >/dev/null; then
+        echo "RPM Install detected, switching to yum update"
+        if [ "$INTERACTIVE" = "True" ]; then
+            yum update nagiosxi
+            exit $?
+        else
+            yum update nagiosxi -y
+            exit $?
+        fi
+    fi
+fi
+
+# Restart the upgrade
+if [ -t 1 ]; then
+	$0 | tee -a "upgrade.log"
+	exit 0
+fi
+
+# Check to make sure we aren't running a normal upgrade on an RPM/offline install
+echo "Checking install type..."
+if command -v "rpm" &> /dev/null && rpm -q nagiosxi &> /dev/null; then
+	if dnf repolist | grep -q "nagios"; then
+		echo "rpm" > /usr/local/nagiosxi/var/xi-itype
+	else
+		echo "offline" > /usr/local/nagiosxi/var/xi-itype
+	fi
+else
+	# Whenever we get a way to differentiate source and ova, then put that check here
+	echo "source" > /usr/local/nagiosxi/var/xi-itype
+fi
+installtype=$(</usr/local/nagiosxi/var/xi-itype)
+echo "Install type: $installtype"
+
+if [ "$installtype" = "offline" ]; then
+	echo "======================================================================"
+	echo "ERROR: Offline installation detected!"
+	echo "You are attempting to upgrade using the source/tarball upgrade script."
+	echo "======================================================================"
+	echo ""
+	echo "Please follow the offline upgrade process."
+	echo "For more information, refer to the following documentation:"
+	echo "https://nagiosenterprises.my.site.com/support/s/article/Installing-Nagios-XI-in-an-Offline-Environment-5423fcb3"
+	echo ""
+	exit 1
+fi
+if  [ "$installtype" = "rpm" ]; then
+	echo "======================================================================"
+	echo "ERROR: RPM installation detected!"
+	echo "You are attempting to upgrade using the source/tarball upgrade script."
+	echo "======================================================================"
+	echo ""
+	echo "Please follow the RPM upgrade process."
+	echo "For more information, refer to the following documentation:"
+	echo "https://repo.nagios.com/?repo=rpm-rhel"
+	echo ""
+	exit 1
+fi
+if [ "$installtype" = "ova/vhd" ]; then
+    echo "==============================================================="
+	echo "WARNING: OVA/VHD installation detected!"
+	echo "==============================================================="
+    echo ""
+	echo "DANGER: OVA/VHD images are intented for evaluation, not production use and maintenance."
+    echo ""
+	echo "We provide our OVA images as a convenience and they are not indented for production use. The virtual"
+	echo "machine images are not considered official distributions and only the Nagios Software contained within the"
+	echo "image is an official distribution. We provide them to enable our customers to quickly bootstrap and evaluate"
+	echo "our product. They are provided “as is” without warranty of any kind and we do not manage and/or maintain the"
+	echo "image after creation. You are welcome to use our OVA in production if you like however we do not support the"
+	echo "operating system nor any alterations to the underlying dependencies/components. If you want to upgrade the"
+	echo "version of Nagios XI on one of our images you want to follow our normal instructions for upgrading Nagios XI: "
+    echo ""
+	echo "https://assets.nagios.com/downloads/nagiosxi/docs/XI-Upgrade-Instructions.pdf"
+    echo ""
+
+	if [ "$INTERACTIVE" = "True" ]; then
+		read -p "Are you sure you want to continue? [y/N] " res
+
+		if [ "$res" = "y" -o "$res" = "Y" ]; then
+			echo "Proceeding with upgrade..."
+		else
+			echo "Upgrade cancelled"
+			exit 0
+		fi
+	fi
+
+fi
+
+echo ""
+echo "Installation check passed."
+
+# Do a verification check that they want to proceed
+if [ "$INTERACTIVE" = "True" ]; then
+
+	fmt -s -w $(tput cols) <<-EOF
+
+		IMPORTANT: Before upgrading, verify you have both a valid system backup as well as a configuration backup of Nagios XI before continuing! More information about backing up and restoring Nagios XI can be found here:  https://assets.nagios.com/downloads/nagiosxi/docs/Backing-Up-And-Restoring-Nagios-XI.pdf
+		
+		NOTICE: Your Nagios XI license includes a test environment instance that allows you to verify successful upgrade and configuration changes before applying them to your production environment. As a best practice for ensuring the reliability of your monitoring systems, we advise you to upgrade your test environment before upgrading any production instances. More information on licensing can be found here: https://assets.nagios.com/handouts/nagiosxi/Nagios-XI-Licensing-Policy.pdf
+
+	EOF
+
+	read -p "Are you sure you want to continue? [y/N] " res
+
+	if [ "$res" = "y" -o "$res" = "Y" ]; then
+		echo "Proceeding with upgrade..."
+	else
+		echo "Upgrade cancelled"
+		exit 0
+	fi
+
+fi
+
+# Initialize install.log
+echo "Nagios XI Upgrade Log
+==========================
+DATE: $(date)
+
+DISTRO INFO:
+$distro
+$version
+$architecture
+
+"
+
+# Remove debian chromium. Prereqs takes care of conflict with mysql headers. We will add back later
+if [ "$distro" == "Ubuntu" ]; then
+	if [ -e /etc/apt/preferences.d/chromium.pref ]; then
+		# Remove possible files
+		rm -f /etc/apt/preferences.d/chromium.pref
+		if [ -e /etc/apt/sources.list.d/debian.list ]; then
+			rm -f /etc/apt/sources.list.d/debian.list
+		fi
+		if [ -e /etc/apt/sources.list.d/zzz_debian.list ]; then
+			rm -f /etc/apt/sources.list.d/zzz_debian.list
+		fi
+		if [ -h /bin/chromium-browser ]; then
+			rm -f /bin/chromium-browser
+		fi
+
+		# Actually remove
+		apt remove -y chromium
+		apt autoremove -y
+		apt update
+
+		if [ "$dist" == "ubuntu22" ]; then
+			apt install -y --allow-downgrades libzstd1/jammy libmysqlclient-dev
+		elif [ "$dist" == "ubuntu24" ]; then
+			apt install -y --allow-downgrades libzstd1/noble libmysqlclient-dev
+		fi
+	fi
+fi
+
+# Copy xi-sys.cfg
+cp xi-sys.cfg "$proddir/var/"
+cp xi-sys.cfg ./nagiosxi/basedir/var/
+
+# Make a copy of xi-sys.cfg to store in etc for strict permissions
+cp xi-sys.cfg "$proddir/etc/"
+cp xi-sys.cfg ./nagiosxi/basedir/etc/
+chown root.$nagiosgroup "$proddir/etc/xi-sys.cfg"
+chown root.$nagiosgroup ./nagiosxi/basedir/etc/xi-sys.cfg
+chmod 550 "$proddir/etc/xi-sys.cfg"
+chmod 550 ./nagiosxi/basedir/etc/xi-sys.cfg
+
+# Set up directory for keys and XI server's encryption key (make one if
+# one doesn't already exist ... XI < 5.5)
+if [ ! -f $proddir/var/keys/xi.key ]; then
+	mkdir -p $proddir/var/keys
+	openssl rand -hex 16 > $proddir/var/keys/xi.key
+fi
+chown $nagiosuser:$nagiosgroup $proddir/var/keys/xi.key
+chmod 640 $proddir/var/keys/xi.key
+
+# Install Sourceguardian extension
+./install-sourceguardian-extension.sh
+./nagiosxi/basedir/scripts/manage_services.sh restart httpd
+
+# Verify server has needed prereqs
+/usr/bin/php ./verify-prereqs.php
+
+# Get existing version ID
+oldversion=$(./get-version)
+
+if [ "$oldversion" -eq 0 ]; then
+	echo "ERROR: Could not determine currently installed version of Nagios XI!" >&2
+	exit 1
+fi
+
+echo "OLD VERSION: $oldversion"
+
+####################### "Preflight" Checking #################
+
+# Are there unapplied Core configuration changes?
+if [ "$cfg__db_info__nagiosxi__dbserver" == "" ]; then
+    cfg__db_info__nagiosxi__dbserver="localhost";
+fi
+
+apply_config_needed=$(mysql -h $cfg__db_info__nagiosxi__dbserver -u $cfg__db_info__nagiosxi__user --password="$cfg__db_info__nagiosxi__pwd" --database=$cfg__db_info__nagiosxi__db -B -N -e "SELECT value FROM xi_options WHERE name = 'ccm_apply_config_needed'")
+if [ $apply_config_needed -eq 1 ]; then
+	echo "The Core Configuration Manager has unapplied changes."
+	echo "Please apply or discard your changes before upgrading Nagios XI."
+	exit 1
+fi
+
+# Do the current config files allow a successful restart?
+/usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+if [ $? -ne 0 ]; then
+	echo "Nagios Core has one or more problems that may prevent it from restarting."
+	echo "Please address any configuration issues before upgrading Nagios XI."
+	exit 1
+fi
+
+##########################################
+# UPDATE THIS VERSION IF YOU UPDATE CORE #
+##########################################
+if [ "$oldversion" -lt 60200 ]; then
+	echo "Checking if any NEB Modules are installed besides NDO"
+	if grep "^broker_module" /usr/local/nagios/etc/nagios.cfg | awk '!/ndo/' | grep -q '.'; then
+		message="Non-standard NEB modules detected while attempting to upgrade. You will need to upgrade the associated NEB modules manually before proceeding with the upgrade."
+		echo ""
+		echo "$message"
+		echo "This link will provide more information: https://answerhub.nagios.com/support/s/article/Upgrade-error-with-XI-and-non-standard-Broker-Modules"
+		echo ""
+		# Doing relative instead of $proddir because I don't think this will be added by the time we'd want to run this
+		if [ $oldversion -gt 51100 ]; then
+			/usr/bin/php ./nagiosxi/basedir/scripts/add_admin_banner.php -m "$message" -t "warn" &> /dev/null || true
+		fi
+		exit 1
+	fi
+fi
+
+####################### DEPENDENCY INSTALLER #################
+
+if [ `command -v yum` ]; then
+
+	if rpm -q nagios-repo >/dev/null; then
+		yum update nagios-repo -y
+	fi 
+
+	# Remove repoforge/rpmforge repository because it's no longer around
+	if [ "$oldversion" -le 530 ]; then
+		yum remove -y rpmforge-release
+		if [ `command -v yum-config-manager` ]; then
+			yum-config-manager --disable rpmforge
+		fi
+
+		yum install -y automake autoconf php-mbstring nmap subversion
+
+	    # Add php-pecl-ssh2 package for scheduled backup component
+		yum install php-pecl-ssh2 -y || true
+	fi
+
+	if [ "$distro" == "CentOS" ] || [ "$distro" == "RedHatEnterpriseServer" ] || [ "$distro" == "OracleServer" ]; then
+
+		if [ $ver -eq 9 ]; then
+			xiverrpm="nagiosxi-deps-el9"
+		elif [ $ver -eq 8 ]; then
+			xiverrpm="nagiosxi-deps-el8"
+		fi
+
+		# Attempt to update dependencies, and if it fails for some reason clean the repos
+		if rpm -q $xiverrpm >/dev/null; then
+            if [ "$oldversion" -lt 501 ]; then
+                yum -y remove $xiverrpm
+            fi
+			yumlocalinstall="$(readlink -e ./$xiverrpm-$xiver-1.noarch.rpm)"
+			if ! yum -y --nogpgcheck localinstall $yumlocalinstall; then
+				yum clean all
+				yum -y --nogpgcheck localinstall $yumlocalinstall
+			fi
+		else
+			# Manually install the new php packages for systems without deps package (upgraded php versions)
+			yum install `yum list installed php*common* | grep php | awk -F "-" {'print $1'} | tail -1`-imap -y
+
+			# Install XI 5.7 dependencies if they don't exist
+			if [ "$oldversion" -le 5700 ]; then
+				yum install -y git
+			fi
+
+			# Install fix for python scripts requiring futures on el7 systems
+			if [ "$oldversion" -le 5807 ] && [ $ver -eq 7 ]; then
+				yum install -y python-futures
+			fi
+		fi
+
+	fi
+
+else
+
+	# Add dependencies on Ubuntu/Debian systems
+	if [ "$oldversion" -le 5703 ]; then
+
+		if [ "$dist" == "ubuntu16" ] || [ "$dist" == "ubuntu18" ] || [ "$dist" == "ubuntu20" ] || [ "$dist" == "ubuntu22" ] || [ "$dist" == "ubuntu24" ] || [ "$dist" == "debian9" ] || [ "$dist" == "debian10" ]; then
+			apt-get install -y php-imap
+		else
+			apt-get install -y php5-imap
+		fi
+
+		if [ "$dist" == "ubuntu20" ]; then
+			apt-get install -y python3-lxml python3-numpy
+		fi
+
+	fi
+
+	if [ "$oldversion" -le 5800 ]; then
+
+		# Fix migrate for deb 10
+		if [ "$dist" == "debian10" ]; then
+			apt-get install -y sshpass
+		fi
+
+	fi
+	if [ "$oldversion" -lt 60000 ]; then
+		apt-get install -y jq
+	fi
+
+	if [ "$oldversion" -lt 60200 ]; then
+		apt-get install -y dos2unix
+	fi
+
+	if [ "$oldversion" -lt 60202 ] && [ "$dist" == "ubuntu24" ] ; then
+		apt-get install -y tzdata-legacy
+	fi
+fi
+
+####################### / DEPENDENCY INSTALLER #################
+
+## VERSION-SPECIFIC FIXES ####################################
+
+# Version < 5.7.0
+if [ "$oldversion" -lt 5700 ]; then
+
+	echo "XI Version to old to continue upgrading!"
+	echo "Upgrade to XI 5.7.0 before continuing"
+	exit 1
+
+fi
+
+
+# Version < 5.7.1
+if [ "$oldversion" -lt 5701 ]; then
+
+	# Install new NDO 3
+	UPDATE_NDO=1
+
+fi
+
+
+# Version < 5.7.2
+if [ "$oldversion" -lt 5702 ]; then
+
+	# Add restrict config area to conf file
+	cat nagiosxi/httpd.restrict.conf >> "$httpdconfdir/nagiosxi.conf"
+
+	# Install new NDO 3
+	UPDATE_NDO=1
+
+    # Fix python3 not linked to python
+    if [ "$dist" == "ubuntu20" ]; then
+		if [ ! -f /usr/bin/python ]; then
+            ln -s /usr/bin/python3 /usr/bin/python
+        fi
+    fi
+
+    # Remove old windowsdesktop wizard if it still exists
+    if [ -d "$proddir/html/includes/configwizards/windowsdesktop" ]; then
+    	mv -f "$proddir/html/includes/configwizards/windowsdesktop" "$proddir/tmp/"
+    fi
+
+fi
+
+
+# Version < 5.7.3
+if [ "$oldversion" -lt 5703 ]; then
+
+	# Install NDO 3.0.3
+	UPDATE_NDO=1
+
+	# Update the windowwmi to re-install wmic if it's not installed, on el8 only
+	if [ "$dist" == "el8" ]; then
+		set +e
+		$proddir/html/includes/configwizards/windowswmi/install.sh
+		set -e
+	fi
+
+fi
+
+
+# Version < 5.7.4
+if [ "$oldversion" -lt 5704 ]; then
+
+	# Do upgrade for NagVis on EL8 systems
+	if [ "$dist" == "el8" ] || [ "$dist" == "ubuntu20" ]; then
+		mv -f /usr/local/nagvis /usr/local/nagvis.backup.5704
+		"$proddir/tools/install_component.php" --file="subcomponents/xicomponents/components/nagvis.zip" --refresh=1
+	fi
+
+	# Install NDO 3.0.4
+	UPDATE_NDO=1
+
+fi
+
+
+# Version < 5.8.0
+if [ "$oldversion" -lt 5800 ]; then
+	# Do database updates
+	if [ ! -f 'mysql.5800.updated' ]; then
+
+		if [ "$cfg__db_info__nagiosql__dbserver" == "" ]; then
+			cfg__db_info__nagiosql__dbserver="localhost";
+		fi
+
+		if [ "$cfg__db_info__nagiosxi__dbserver" == "" ]; then
+			cfg__db_info__nagiosxi__dbserver="localhost";
+		fi
+
+		# Update nagiosql database structure (excludes on service escalation)
+		mysql -h $cfg__db_info__nagiosql__dbserver -u $cfg__db_info__nagiosql__user --password="$cfg__db_info__nagiosql__pwd" --database=$cfg__db_info__nagiosql__db --force < subcomponents/ccm/db/schema_05.sql
+
+		# Update nagiosxi database
+		mysql -h $cfg__db_info__nagiosxi__dbserver -u $cfg__db_info__nagiosxi__user --password="$cfg__db_info__nagiosxi__pwd" --database=$cfg__db_info__nagiosxi__db --force < nagiosxi/nagiosxi-db/mods/mysql/schema_5800.sql
+
+		touch 'mysql.5800.updated'
+
+	fi
+
+	UPDATE_ADDONS=1
+
+	# Install NDO 3.0.5
+	UPDATE_NDO=1
+
+	# Update sudoers file for Migration script
+	UPDATE_SUDOERS=1
+
+	# Make sure logging for scheduledreporting exists
+    touch /usr/local/nagiosxi/var/scheduledreporting.log
+    chown $apacheuser:$apachegroup /usr/local/nagiosxi/var/scheduledreporting.log
+    chmod 664 /usr/local/nagiosxi/var/scheduledreporting.log
+
+    # Fix security issue where the php pnp template files are accessible from web
+    if [ -f "$httpdconfdir/nagios.conf" ]; then
+    	if ! grep -q "share/pnp/templates" "$httpdconfdir/nagios.conf" ; then
+    		echo '
+<Directory "/usr/local/nagios/share/pnp/templates">
+Deny from all
+</Directory>
+' >> "$httpdconfdir/nagios.conf"
+    	fi
+    fi 
+
+fi
+
+# Version < 5.8.2
+if [ "$oldversion" -lt 5802 ]; then
+
+	# Do some basic session changes to disable defaults
+	sed -i "/session.upload_progress.enabled =.*/c\session.upload_progress.enabled = 0" "$phpini" || true
+	sed -i "/session.use_strict_mode =.*/c\session.use_strict_mode = 1" "$phpini" || true
+
+	# Update Ubuntu 20 so snmptrapd is enabled
+	if [ "$distro" == "Debian" ] || [ "$distro" == "Ubuntu" ]; then
+		if [ `command -v systemctl` ]; then
+			systemctl enable snmptrapd
+			systemctl restart snmptrapd
+		fi
+	fi
+
+	# Upgrade MySQL 8+ systems with process privs
+	if [ "$dist" == "el8" ] || [ "$dist" == "ubuntu20" ]; then
+
+		domysqlupdate="no"
+		echo "Upgrading MySQL users permissions..."
+
+		# Get root mysql password
+		# Test for pre-saved password (from ./fullinstall script)
+		if mysqlshow -u root -p"$mysqlpass" &>/dev/null; then
+		    echo "Saved password worked..."
+		    domysqlupdate="yes"
+		else
+		    for i in 1 2 3; do
+		        if [ "$INTERACTIVE" = "True" ]; then
+		            # Ask for the password
+		            echo "Enter the MySQL root password to continue..."
+		            read -p "MySQL Root Password: " pass
+		        fi
+
+		        # Test the password
+		        if mysqlshow -u root -p"$pass" &>/dev/null; then
+		            echo "Password validated."
+		            domysqlupdate="yes"
+		            mysqlpass="$pass"
+		            break
+		        else
+		            echo "Password failed." >&2
+		            if [ $i -eq 3 ]; then
+		            	echo "Skipping updates to MySQL user permissions..."
+		            fi
+		        fi
+		    done
+		fi
+
+		if [ "$domysqlupdate" == "yes" ]; then
+			mysql -u root -p$mysqlpass -e "GRANT PROCESS ON *.* TO 'nagiosxi'@'localhost';"
+			mysql -u root -p$mysqlpass -e "GRANT PROCESS ON *.* TO 'nagiosql'@'localhost';"
+			mysql -u root -p$mysqlpass -e "GRANT PROCESS ON *.* TO 'ndoutils'@'localhost';"
+			mysql -u root -p$mysqlpass -e "FLUSH PRIVILEGES;"
+		fi
+	fi
+
+	# Upgrade NRDP to 2.0.4
+	UPDATE_NRDP=1
+
+	# Install NDO 3.0.6
+	UPDATE_NDO=1
+
+	# Make sure postfix is installed and running on el8 (but don't error if it doesn't work)
+	set +e
+	if [ "$dist" == "el8" ]; then
+		systemctl enable postfix
+		systemctl restart postfix
+	fi
+	set -e
+
+fi
+
+# Version < 5.8.4
+if [ "$oldversion" -lt 5804 ]; then
+	if [ -f "$proddir/html/config.inc.saved" ]; then
+		mv "$proddir/html/config.inc.saved" "$proddir/html/config.inc.saved.php"
+	fi
+	if [ -f "$proddir/html/config.inc.dist" ]; then
+		mv "$proddir/html/config.inc.dist" "$proddir/html/config.inc.dist.php"
+	fi
+fi
+
+# Version < 5.8.5
+if [ "$oldversion" -lt 5805 ]; then
+
+	# Install NDO 3.0.7
+	UPDATE_NDO=1
+
+fi
+
+# Version < 5.8.6
+if [ "$oldversion" -lt 5806 ]; then
+
+	# Upgrade NagVis to verison 2.0.9
+	cp -rf /usr/local/nagvis /usr/local/nagvis.backup.5805
+	"$proddir/tools/install_component.php" --file="subcomponents/xicomponents/components/nagvis.zip"
+
+fi
+
+# Version < 5.8.7
+if [ "$oldversion" -lt 5807 ]; then
+
+	# Upgrade nocscreen to fix file permission vuln
+	"$proddir/tools/install_component.php" --file="subcomponents/xicomponents/components/nocscreen.zip"
+
+	# Upgrade nrdsconfigmanager to fix RCE vuln (must removed touched installed file first)
+	rm -f "$proddir/html/includes/components/nrdsconfigmanager/installed.nrds"
+	"$proddir/tools/install_component.php" --file="subcomponents/xicomponents/components/nrdsconfigmanager.zip"
+
+	# Upgrade hyper-v wizard if it exists
+	if [ -d "$proddir/html/includes/configwizards/hyperv" ]; then
+		"$proddir/tools/install_configwizard.php" --file="subcomponents/xiwizards/wizards/hyperv.zip" --restart=false
+	fi
+
+	# Recompile core for added XSS patches
+	UPDATE_CORE=1
+
+	# Upgrade NRDP to version 2.0.5 to fix receiving spooled check results
+	UPDATE_NRDP=1
+
+	# Update nagiosql database to alter collation on tbl_host and tbl_service
+	# to fix case sensitivity in object names
+	mysql -h $cfg__db_info__nagiosql__dbserver -u $cfg__db_info__nagiosql__user --password="$cfg__db_info__nagiosql__pwd" --database=$cfg__db_info__nagiosql__db --force < subcomponents/ccm/db/schema_06.sql
+
+	# Update NSCA to 2.10.1
+	UPDATE_NSCA=1
+
+fi
+
+if [ "$oldversion" -lt 5809 ]; then
+
+	# Recompile core for update check mitm/xss
+	UPDATE_CORE=1
+
+	# Fix issue with automysqlbackup having no password
+	# (set to default if none set and give message)
+	if [ -f /root/scripts/automysqlbackup ]; then
+		sed -i 's/PASSWORD=$/PASSWORD=nagiosxi/' /root/scripts/automysqlbackup
+		echo "############"
+		echo "NOTICE: MySQL root password in /root/scripts/automysqlbackup has been set"
+		echo "to the XI default. If your MySQL root password is not the XI default and you'd"
+		echo "like to continue to use the script, edit the script and update the password."
+		echo "############"
+	fi
+
+fi
+
+# Version < 5.9.1
+if [ "$oldversion" -lt 5901 ]; then
+
+	# Fix SNMP user on Ubuntu 22 systems
+	if [ "$dist" == "ubuntu22" ] || [ "$dist" == "ubuntu24" ]; then
+		chown -R "Debian-snmp:snmptt" /var/spool/snmptt /var/log/snmptt
+	fi
+
+fi
+
+# Version < 5.9.2
+if [ "$oldversion" -lt 5902 ]; then
+
+	# Upgrade NRPE to 4.1.0 for security fixes
+	UPDATE_NRPE=1
+
+	# Upgrade Nagios Core to 4.4.9
+	UPDATE_CORE=1
+fi
+
+# Version < 5.9.3
+if [ "$oldversion" -lt 5903 ]; then
+
+	# Security: force upgrade of twilio component to latest.
+	"$proddir/tools/install_component.php" --file="subcomponents/xicomponents/components/twilio.zip" --refresh=1
+fi
+
+# Version < 5.9.4
+if [ "$oldversion" -lt 5904 ]; then
+	if [ "$dist" == "el8" ] || [ "$dist" == "el9" ]; then
+		if [[ ($(grep -c "max_requests" /etc/php-fpm.d/www.conf) = 1) && ("$(grep "max_requests" /etc/php-fpm.d/www.conf)" == ";"*) && ("$(grep "pm =" /etc/php-fpm.d/www.conf)" == *"dynamic" ) ]]; then
+			sed -i "s/$(grep 'pm.max_requests' /etc/php-fpm\.d/www\.conf)/pm.max_requests = 250/" /etc/php-fpm.d/www.conf
+			$proddir/scripts/manage_services.sh restart php-fpm
+		fi
+	fi
+	# Upgrade Nagios Core to 4.4.10
+	UPDATE_CORE=1
+
+	# Set up OAuth
+	(
+		cd ./subcomponents/oauth2
+		./install
+	)
+	
+	# Update logrotate files
+	UPDATE_LOGROTATE=1
+
+	# Upgrade NagVis to verison 2.1.4
+	cp -rf /usr/local/nagvis /usr/local/nagvis.backup.5903
+	"$proddir/tools/install_component.php" --file="subcomponents/xicomponents/components/nagvis.zip"
+
+fi
+
+# Version < 5.11.00
+if [ "$oldversion" -lt 51100 ]; then
+
+	# Upgrade Nagios Core to 4.4.13
+	UPDATE_CORE=1
+
+	# Upgrade plugins to 2.4.5
+	UPDATE_PLUGINS=1
+
+    # Upgrade NDO to version 3.1.0
+	UPDATE_NDO=1
+
+	UPDATE_ADDONS=1
+
+	# Do database updates
+	if [ ! -f 'mysql.51100.updated' ]; then
+
+		if [ "$cfg__db_info__nagiosql__dbserver" == "" ]; then
+			cfg__db_info__nagiosql__dbserver="localhost";
+		fi
+
+		if [ "$cfg__db_info__nagiosxi__dbserver" == "" ]; then
+			cfg__db_info__nagiosxi__dbserver="localhost";
+		fi
+
+		# Update nagiosxi database (Banner Message)
+		mysql -h $cfg__db_info__nagiosxi__dbserver -u $cfg__db_info__nagiosxi__user --password="$cfg__db_info__nagiosxi__pwd" --database=$cfg__db_info__nagiosxi__db --force < nagiosxi/nagiosxi-db/mods/mysql/schema_51100.sql
+
+		touch 'mysql.51100.updated'
+	fi
+
+
+	if [ -f /usr/local/nagios/etc/ndo.cfg ]; then
+		echo "" >> /usr/local/nagios/etc/ndo.cfg
+		echo "downtime_history_data=0" >> /usr/local/nagios/etc/ndo.cfg
+		echo "comment_history_data=0" >> /usr/local/nagios/etc/ndo.cfg
+		sed -i 's/host_check_data=.*/host_check_data=0/' /usr/local/nagios/etc/ndo.cfg
+		sed -i 's/service_check_data=.*/service_check_data=0/' /usr/local/nagios/etc/ndo.cfg
+	fi
+fi
+
+# Version < 5.11.01
+if [ "$oldversion" -lt 51101 ]; then
+
+	UPDATE_ADDONS=1
+
+	if [ -f /usr/local/nagios/etc/ndo.cfg ]; then
+		sed -i 's/\(.\)downtime_history_data=0/\1\ndowntime_history_data=0/' /usr/local/nagios/etc/ndo.cfg
+	fi
+fi
+
+# Version < 5.11.02
+if [ "$oldversion" -lt 51102 ]; then
+	if `systemctl list-unit-files | grep -q logrotate` ; then
+		if [ -z "$(grep 'ReadWritePaths=' /usr/lib/systemd/system/logrotate.service)" ]; then
+			echo "ReadWritePaths=$proddir/var $proddir/tmp" >> /usr/lib/systemd/system/logrotate.service
+			systemctl daemon-reload
+		fi
+	fi
+	if [ -f /usr/share/snmp/mibs/ietf/SNMPv2-PDU ]; then
+		mkdir -p /usr/share/snmp/mibs-extra/ietf
+		mv /usr/share/snmp/mibs/ietf/SNMPv2-PDU /usr/share/snmp/mibs-extra/ietf/SNMPv2-PDU
+	fi
+fi
+
+# Version < 6.00.00
+if [ "$oldversion" -lt 60000 ]; then
+
+	# Fix permissions for bpi.conf	
+	touch "$proddir/etc/components/bpi.conf"
+	chown "$apacheuser:$nagiosgroup" "$proddir/etc/components/bpi.conf"
+	chmod 664 "$proddir/etc/components/bpi.conf"
+
+	UPDATE_ADDONS=1
+
+    # Do database updates
+    if [ ! -f 'mysql.60000.updated' ]; then
+        if [ "$cfg__db_info__nagiosxi__dbserver" == "" ]; then
+            cfg__db_info__nagiosxi__dbserver="localhost";
+        fi
+
+        # Add wizard tracking table to database
+		mysql -h $cfg__db_info__nagiosxi__dbserver -u $cfg__db_info__nagiosxi__user --password="$cfg__db_info__nagiosxi__pwd" --database=$cfg__db_info__nagiosxi__db --force < nagiosxi/nagiosxi-db/mods/mysql/schema_60000.sql
+        touch 'mysql.60000.updated'
+    fi
+fi
+
+# Fix for PhantomJS not installing/upgrading
+if [ "$oldversion" -lt 60001 ]; then
+	UPDATE_PHANTOMJS=1
+fi
+
+if [ "$oldversion" -lt 60002 ]; then
+	# Update for security fixes
+	UPDATE_CORE=1
+
+	# Update automysqlbackup #247 DA
+	if [ -f "/root/scripts/automysqlbackup" ]; then
+		revision="\nif mysqldump --column-statistics=0 --version \&>\/dev\/null\; then\n\tOPT=\"--column-statistics=0 \$OPT\"\nfi"
+		sed -i "s/$(grep '^OPT=' /root/scripts/automysqlbackup)/&\n$revision/" /root/scripts/automysqlbackup
+	fi
+
+	# This is the database we care about here. We need to make sure it's valid
+	if [ "$cfg__db_info__nagiosxi__dbserver" == "" ]; then
+		cfg__db_info__nagiosxi__dbserver="localhost";
+	fi
+
+	# Get root mysql password
+	# Test for pre-saved password (from ./fullinstall script)
+	if mysqlshow -h $cfg__db_info__nagiosxi__dbserver -u root -p"$mysqlpass" &>/dev/null; then
+	    echo "Saved password worked..."
+	    domysqlupdate="yes"
+	else
+	    for i in 1 2 3; do
+	        if [ "$INTERACTIVE" = "True" ]; then
+	            # Ask for the password
+	            echo "Enter the MySQL root password to continue..."
+	            read -p "MySQL Root Password: " pass
+	        fi
+
+	        # Test the password
+	        if mysqlshow -h $cfg__db_info__nagiosxi__dbserver -u root -p"$pass" &>/dev/null; then
+	            echo "Password validated."
+	            domysqlupdate="yes"
+	            mysqlpass="$pass"
+	            break
+	        else
+	            echo "Password failed." >&2
+	            if [ $i -eq 3 ]; then
+	            	echo "Warning:	Stored or entered MySQL root password does not work."
+					echo "	Make sure the \"mysqlpass\" value in \"/usr/local/nagiosxi/etc/xi-sys.cfg\" and"
+					echo "	\"/usr/local/nagiosxi/var/xi-sys.cfg\" is up to date and accurate"
+					echo "	or enter in the up to date password when upgrading without the \"-n\" option."
+	            	echo "	Skipping updates to MySQL user permissions..."
+					exit 1
+	            fi
+	        fi
+	    done
+	fi
+
+	dbmaint_doesnt_exist="no"
+	if [ "$domysqlupdate" == "yes" ]; then
+		result="$(mysql -h $cfg__db_info__nagiosxi__dbserver -u root -p$mysqlpass -sse 'SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = "dbmaint_nagiosxi")')"
+		if [ "$result" == "0" ]; then
+			dbmaint_doesnt_exist="yes"
+		fi
+	fi
+
+	root_has_grant="no"
+	if [ "$domysqlupdate" == "yes" ] && [ "$dbmaint_doesnt_exist" == "yes" ]; then
+		if mysql -h $cfg__db_info__nagiosxi__dbserver -u root -p$mysqlpass -e 'GRANT GRANT OPTION ON *.* TO root@localhost;' &>/dev/null; then
+			root_has_grant="yes"
+		else
+			echo "Error:	Unable to certify if the MySQL root user has the GRANT OPTION permission."
+			echo "	When setting up the root user for Nagios XI to use on an offloaded database,"
+			echo "	the \"GRANT OPTION\" grant needs to be explicitly set."
+			echo "	A possible fix:"
+			echo "	Run on server with offloaded database:"
+			echo "		\"GRANT ALL ON *.* TO root@'<IP_OF_NAGIOS_XI_SERVER>' WITH GRANT OPTION;"
+			exit 1
+		fi
+	fi
+
+	if [ "$domysqlupdate" == "yes" ] && [ "$dbmaint_doesnt_exist" == "yes" ] && [ "$root_has_grant" == "yes" ] && [ ! -f 'mysql.60002_root.updated' ]; then
+		# Sanity Check for dbmaintpass
+		if [ -z "$dbmaintpass" ]; then
+			dbmaintpass="$(tr -dc '[:alnum:]' < /dev/urandom | head -c 20)"
+		fi
+		sed -i "s/DBMAINTDEFAULTPASSWORD/$dbmaintpass/" "nagiosxi/nagiosxi-db/mods/mysql/schema_60000_root.sql"
+
+		if [ "$cfg__db_info__nagiosxi__dbserver" == "localhost" ]; then
+			sed -i "s/USERDATABASE/localhost/" "nagiosxi/nagiosxi-db/mods/mysql/schema_60000_root.sql"
+		else
+			# Get IP address to use for offloaded DB's
+			ip=$(mysql -h $cfg__db_info__nagiosxi__dbserver -u root -p$mysqlpass -sse "SELECT host FROM mysql.user WHERE user='nagiosxi'")
+			if [ -z "$ip" ]; then
+				ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet[^6]/{print substr($2,0)}' | sed 's|/.*||')
+			fi
+			if [ -z "$ip" ]; then
+				ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet6/{print substr($2,0)}' | sed 's|/.*||')
+			fi
+			sed -i "s/USERDATABASE/$ip/" "nagiosxi/nagiosxi-db/mods/mysql/schema_60000_root.sql"
+		fi
+
+		mysql -h $cfg__db_info__nagiosxi__dbserver -u root --password="$mysqlpass" < nagiosxi/nagiosxi-db/mods/mysql/schema_60000_root.sql
+
+		if ! grep -q "dbmaint_user" $proddir/html/config.inc.php ; then
+			sed -i "s/\"nagiosxi\" => array(/\"nagiosxi\" => array(\n        \"dbmaint_user\" => 'dbmaint_nagiosxi',\n        \"dbmaint_pwd\" => '$dbmaintpass',/" "$proddir/html/config.inc.php"
+		fi
+		touch 'mysql.60002_root.updated'
+	fi
+fi
+
+# XI 2024R1.1
+if [ "$oldversion" -lt 60100 ]; then
+
+	UPDATE_ADDONS=1
+
+	echo "Installing Chromium..."
+	(
+		cd ./subcomponents/chromium
+		./install
+	)
+
+    # Set up logging files
+    echo "Setting log file permissions..."
+	touch $proddir/var/chromium_report.log
+	chown $apacheuser:$apachegroup $proddir/var/chromium_report.log
+	chmod 664 $proddir/var/chromium_report.log
+
+fi
+
+# XI 2024R1.1.3
+if [ "$oldversion" -lt 60103 ]; then
+	newRule="RewriteRule nagiosxi/api/v2/(.*)$ $proddir/html/api/v2/index.php [QSA,NC,L]"
+	awk "/nagiosxi\/api\/v1/ { print; print \"$newRule\"; next }1" $httpdconfdir/nagiosxi.conf > $httpdconfdir/nagiosxi.conf.new
+	mv $httpdconfdir/nagiosxi.conf.new $httpdconfdir/nagiosxi.conf
+
+	if [ "$distro" == "Debian" ] || [ "$distro" == "Ubuntu" ]; then
+		ssl_conf="/etc/apache2/sites-available/default-ssl.conf"
+	else
+		ssl_conf="$httpdconfdir/ssl.conf"
+	fi
+	if [ -f $ssl_conf ]; then
+		awk "/nagiosxi\/api\/v1/ { print; print \"$newRule\"; next }1" $ssl_conf > "$ssl_conf.new"
+		mv "$ssl_conf.new" $ssl_conf
+	fi
+
+	# raise group_concat_max_len to prevent truncation	
+	mycnf="/etc/my.cnf"
+
+    if [ "$distro" == "Ubuntu" ] || [ "$distro" == "Debian" ]; then
+        mycnf="/etc/mysql/conf.d/mysql.cnf"
+        if [ ! -f $mycnf ]; then
+            mycnf="/etc/mysql/my.cnf"
+        fi
+    fi
+
+    if [ "$dist" == "el8" ] || [ "$dist" == "el9" ]; then
+        mycnf="/etc/my.cnf.d/mysql-server.cnf"
+    fi
+
+	# Add ldap_ad_integration.log 
+	if [ ! -f $proddir/var/components/ldap_ad_integration.log ]; then
+		touch $proddir/var/components/ldap_ad_integration.log
+		chown $apacheuser:$nagiosgroup $proddir/var/components/ldap_ad_integration.log
+		chmod 664 $proddir/var/components/ldap_ad_integration.log
+	fi
+	
+	# Make backup for mysql config
+	mycnfbak="$mycnf.bak"
+	mycnfnew="$mycnf.new"
+	cp -f $mycnf $mycnfbak
+
+	if ! grep -q "group_concat_max_len" $mycnf; then
+		sed -i 's/\[mysqld\]/\[mysqld\]\ngroup_concat_max_len=8388608\n/' $mycnf
+	fi
+
+	# above update requires a mysql restart to take effect
+	if [ "$cfg__db_info__nagiosql__dbserver" = "localhost" ] || [ "$cfg__db_info__nagiosql__dbserver" = "127.0.0.1" ]; then
+		./nagiosxi/basedir/scripts/manage_services.sh restart mysqld
+	else
+		extra_message=<<-EOF
+
+		MANUAL MYSQL RESTART REQUIRED!!
+		This upgrade requires a MySQL server restart. Please restart your offloaded MySQL server manually.
+		
+		EOF
+	fi
+
+	# Updating for logrotate
+	touch $proddir/var/chromium_report.log
+	chown $nagiosuser:$nagiosgroup $proddir/var/chromium_report.log
+	chmod 664 $proddir/var/chromium_report.log
+
+	touch $proddir/var/components/snmptrapsender.log
+	chown $apacheuser:$nagiosgroup $proddir/var/components/snmptrapsender.log
+	chmod 664 $proddir/var/components/snmptrapsender.log
+
+	# Update logrotate files
+	UPDATE_LOGROTATE=1
+
+	UPDATE_ADDONS=1
+
+	# Apply the Core service definition by running the upgrade script to fix offloaded database issues
+	UPDATE_CORE=1
+fi
+
+# XI 2024R1.1.4
+if [ "$oldversion" -lt 60104 ]; then
+	UPDATE_ADDONS=1
+fi
+
+
+if [ "$oldversion" -lt 60105 ]; then
+
+	# Add service dependency exclusions
+	mysql -h $cfg__db_info__nagiosql__dbserver -u $cfg__db_info__nagiosql__user --password="$cfg__db_info__nagiosql__pwd" --database=$cfg__db_info__nagiosql__db --force < subcomponents/ccm/db/schema_07.sql
+
+	UPDATE_ADDONS=1
+
+fi
+
+if [ "$oldversion" -lt 60200 ]; then
+	(
+		cd ./subcomponents/mod_security
+		./install
+		newRule="ErrorDocument 402 /nagiosxi/ModSecurity.php"
+		awk "/<Directory \"\/usr\/local\/nagiosxi\/html\">/ { print; print \"$newRule\"; next }1" $httpdconfdir/nagiosxi.conf > $httpdconfdir/nagiosxi.conf.new
+		mv $httpdconfdir/nagiosxi.conf.new $httpdconfdir/nagiosxi.conf
+	)
+
+    # apply security patches to nrdp
+	UPDATE_NRDP=1
+
+	UPDATE_ADDONS=1
+
+	# raise max_allowed_packet
+	if [ "$cfg__db_info__nagiosql__dbserver" = "localhost" ] || [ "$cfg__db_info__nagiosql__dbserver" = "127.0.0.1" ]; then
+	
+		mycnf="/etc/my.cnf"
+
+		if [ "$distro" == "Ubuntu" ] || [ "$distro" == "Debian" ]; then
+			mycnf="/etc/mysql/conf.d/mysql.cnf"
+			if [ ! -f $mycnf ]; then
+				mycnf="/etc/mysql/my.cnf"
+			fi
+		fi
+
+		if [ "$dist" == "el8" ] || [ "$dist" == "el9" ]; then
+			mycnf="/etc/my.cnf.d/mysql-server.cnf"
+		fi
+
+		# Make backup for mysql config
+		mycnfbak="$mycnf.bak"
+		mycnfnew="$mycnf.new"
+		cp -f $mycnf $mycnfbak
+
+		# Fix broken mysql configs on ubuntu 20
+		if [ "$dist" == "ubuntu20" ]; then
+			if grep -wq "\[mysqld\]" $mycnf; then
+				echo -e "\n" >> $mycnf
+			else
+				echo -e "\n\n[mysqld]\n" >> $mycnf
+			fi
+			! grep -q "tmp_table_size" $mycnf && echo "tmp_table_size=64M" >> $mycnf
+			! grep -q "max_heap_table_size" $mycnf && echo "max_heap_table_size=64M" >> $mycnf
+			! grep -q "key_buffer_size" $mycnf && echo "key_buffer_size=32M" >> $mycnf
+			! grep -q "table_open_cache" $mycnf && echo "table_open_cache=32" >> $mycnf
+			grep -q "innodb_file_per_table" $mycnf && 
+				sed -i 's/innodb_file_per_table=.*/innodb_file_per_table=1/g' $mycnf || echo "innodb_file_per_table=1" >> $mycnf
+			! grep -q "sort_buffer_size" $mycnf && echo "sort_buffer_size=32M" >> $mycnf
+			! grep -q "max_connections" $mycnf && echo "max_connections=1000" >> $mycnf
+			! grep -q "open_files_limit" $mycnf && echo "open_files_limit=4096" >> $mycnf
+			! grep -q "sql_mode" $mycnf && echo "sql_mode=NO_ENGINE_SUBSTITUTION" >> $mycnf
+			! grep -q "disable_log_bin" $mycnf && echo "disable_log_bin" >> $mycnf
+		fi
+
+		grep -q "max_allowed_packet" $mycnf && 
+			sed -i 's/max_allowed_packet=.*/max_allowed_packet=512M/g' $mycnf || echo "max_allowed_packet=512M" >> $mycnf
+
+		# above update requires a mysql restart to take effect
+		./nagiosxi/basedir/scripts/manage_services.sh restart mysqld
+	fi
+
+	# Updated for Mod Security
+	UPDATE_SUDOERS=1
+
+	# Update the version in pre flight checking whenever you upgrade Core
+	# Upgrade Nagios Core to 4.5.3
+	UPDATE_CORE=1
+
+	# Upgrade plugins to 2.4.10
+	UPDATE_PLUGINS=1
+
+    # Upgrade NDO to 3.1.1
+	UPDATE_NDO=1
+
+	# Update schema for CCM 3.4.0 (MRTG config file mgmt)
+	mysql -h $cfg__db_info__nagiosql__dbserver -u $cfg__db_info__nagiosql__user --password="$cfg__db_info__nagiosql__pwd" --database=$cfg__db_info__nagiosql__db --force < subcomponents/ccm/db/schema_08.sql
+fi
+
+# XI 2024R1.2.1
+if [ "$oldversion" -lt 60201 ]; then
+	if [ "$distro" == "Ubuntu" ]; then
+		echo "Installing Chromium..."
+		(
+			cd ./subcomponents/chromium
+			./install
+		)
+	fi
+fi
+
+# XI 2024R1.2.2
+if [ "$oldversion" -lt 60202 ]; then
+	# Upgrade plugins to 2.4.12
+	UPDATE_PLUGINS=1
+
+	UPDATE_ADDONS=1
+
+	# Ubuntu 24 is missing some mibs. Manually download them here
+	if [ "$dist" == "ubuntu24" ]; then
+		cp ./nagiosxi/mibs/* $mibsdir
+	fi
+fi
+
+# XI 2024R1.3
+if [ "$oldversion" -lt 60300 ]; then
+	UPDATE_ADDONS=1
+fi
+
+# XI 2024R1.3.1
+if [ "$oldversion" -lt 60301 ]; then
+	UPDATE_ADDONS=1
+fi
+
+# XI 2024R1.3.2
+if [ "$oldversion" -lt 60302 ]; then
+	UPDATE_NRPE=1
+fi
+
+##########################################################################
+## FLAGGED CHANGES
+##
+## If the version specific updates set these flags, do them now
+##########################################################################
+
+if [ $UPDATE_CORE -eq 1 ]; then
+	echo "Upgrading Nagios Core..."
+	(
+		cd ./subcomponents/nagioscore
+		./upgrade
+	)
+fi
+
+if [ $UPDATE_NDO -eq 1 ]; then
+	echo "Upgrading NDO..."
+	(
+		cd ./subcomponents/ndo
+		./upgrade
+	)
+fi
+
+if [ $UPDATE_NRDP -eq 1 ]; then
+	echo "Upgrading NRDP..."
+	(
+		cd ./subcomponents/nrdp
+		./upgrade
+	)
+fi
+
+if [ $UPDATE_NRPE -eq 1 ]; then
+	echo "Upgrading NRPE..."
+	(
+		cd ./subcomponents/nrpe
+		./upgrade
+	)
+fi
+
+if [ $UPDATE_NSCA -eq 1 ]; then
+	echo "Upgrading NSCA..."
+	(
+		cd ./subcomponents/nsca
+		./upgrade
+	)
+fi
+
+if [ $UPDATE_PNP -eq 1 ]; then
+	echo "Upgrading PNP..."
+	(
+		cd ./subcomponents/pnp
+		./upgrade
+	)
+fi
+
+if [ $UPDATE_PLUGINS -eq 1 ]; then
+	echo "Upgrading Nagios Plugins..."
+	(
+		cd ./subcomponents/nagiosplugins
+		./upgrade
+	)
+fi
+
+# Update MRTG component
+if [ $UPDATE_MRTG -eq 1 ]; then
+	(
+		cp /etc/mrtg/mrtg.cfg /etc/mrtg/mrtg.cfg.upgradebak
+		cd ./subcomponents/mrtg
+		./upgrade
+		mv /etc/mrtg/mrtg.cfg.upgradebak /etc/mrtg/mrtg.cfg
+	)
+fi
+
+if [ $UPDATE_ADDONS -eq 1 ]; then
+	if [ "$INTERACTIVE" = "True" ]; then
+		fmt -s -w $(tput cols) <<-EOF
+		===================
+		XI Add-ons Updates
+		===================
+		NOTICE: This upgrade script will update ALL XI components, wizards, and dashlets
+		to the latest available versions. Before running this upgrade the currently
+		installed versions will be backed up to the /tmp directory.
+
+		EOF
+
+		read -p "Are you sure you want to continue? [y/N] " res
+
+	else
+		res="Y"
+	fi
+
+	if [ "$res" = "y" -o "$res" = "Y" ]; then
+		echo "Proceeding with upgrade..."
+
+		# Update wizards
+		echo "Updating XI config wizards..."
+		(
+			cd ./subcomponents/xiwizards
+			./install
+		)
+
+		# Update components
+		echo "Updating XI components..."
+		(
+			cd ./subcomponents/xicomponents
+			./install
+		)
+
+		# Install dashlets
+		echo "Updating XI dashlets..."
+		(
+			cd ./subcomponents/xidashlets
+			./install
+		)
+	else
+		echo "Upgrade cancelled"
+	fi
+fi
+
+if [ $UPDATE_LOGROTATE -eq 1 ]; then
+	echo "Updating Logrotate Configuration"
+	cp ./nagiosxi/logrotate.nagiosxi /etc/logrotate.d/nagiosxi
+	sed -i "s|APACHEUSER|$apacheuser|;s|NAGIOSGROUP|$nagiosgroup|;s|NAGIOSUSER|$nagiosuser|;s|PRODDIR|$proddir|" /etc/logrotate.d/nagiosxi
+fi
+
+# Fix/update sudoers
+DOSUDO=0
+if [ $UPDATE_SUDOERS -eq 1 ]; then
+
+	if [ "$INTERACTIVE" = "True" ]; then
+		fmt -s -w $(tput cols) <<-EOF
+		=============================
+		SUDOERS FILE REQUIRES UPGRADE
+		=============================
+		This Nagios XI upgrade requires a change to the sudoers file. If you would like, the
+		upgrade can perform this change in your /etc/sudoers.
+
+		You *must* confirm if you can overwrite the sudoers file. If you can't update it,
+		a message will show at the end of upgrade to manually update your sudoers file.
+
+		EOF
+
+		read -p "Have upgrade script update sudoers file? [Y/n] " res
+
+	else
+		res="Y"
+	fi
+
+	if [ "$res" = "" -o "$res" = "y" -o "$res" = "Y" ]; then
+		DOSUDO=1
+	fi
+
+	if [ $DOSUDO -eq 1 ]; then
+		./install-sudoers
+	fi
+
+fi
+
+if [ $UPDATE_PHANTOMJS -eq 1 ]; then
+	(
+		cd ./subcomponents/phantomjs
+		./install
+	)
+fi
+
+##########################################################################
+## COMMON FIXES
+##
+## These run during ever upgrade after version-specific upgrade procedures
+##########################################################################
+
+# Add a UUID if one doesn't already exist
+if [ ! -f /usr/local/nagiosxi/var/xi-uuid ]; then
+	uuidgen >> /usr/local/nagiosxi/var/xi-uuid
+	chown $nagiosuser:$nagiosgroup /usr/local/nagiosxi/var/xi-uuid
+fi
+
+# Set up key and cert directories
+mkdir -p /usr/local/nagiosxi/var/keys
+mkdir -p /usr/local/nagiosxi/var/certs
+chown -R $nagiosuser:$nagiosgroup /usr/local/nagiosxi/var/keys
+chown -R $nagiosuser:$nagiosgroup /usr/local/nagiosxi/var/certs
+chmod 775 /usr/local/nagiosxi/var/keys
+chmod 775 /usr/local/nagiosxi/var/certs
+
+# Update old crontab entries
+./uninstall-crontab-nagios
+./uninstall-crontab-root
+install -m 644 nagiosxi/nagiosxi.cron.d /etc/cron.d/nagiosxi 
+
+# Fix perms on Backups (make backup directory if it doesn't exist)
+mkdir -p /store/backups/nagiosxi
+chown $nagiosuser:$nagiosgroup -R /store/backups/nagiosxi
+
+# Fix perms on Nagios etc directory
+chown $apacheuser:$nagiosgroup /usr/local/nagios/etc
+
+# XI 2024R1.1.2
+if [ "$oldversion" -lt 60102 ] && [ -d "$proddir/html/api/v2" ]; then
+	# Remove prototype API endpoints from 2024R1.1
+	# We're doing this as close as possible to the HTML install. 
+	# Please don't add any long-running between these steps or Neptune users will experience a crash -SAW
+	rm -rf "$proddir/html/api/v2/*"
+	cp -r ./nagiosxi/basedir/html/api/v2/* "$proddir/html/api/v2"
+fi
+
+# Install updated NagiosXI PHP files, scripts, etc. to /usr/local/nagiosxi
+# This also makes the latest config perm reset utility
+./install-html
+
+# Fix permissions on restore config file
+chmod ug+x "$proddir/scripts/nom_restore_nagioscore_checkpoint_specific.sh"
+
+# Install latest PNP templates
+./install-pnptemplates
+
+# Make sure large install tweaks are enabled
+echo "Enabling large install tweaks..."
+sed -i 's/use_large_installation_tweaks=0/use_large_installation_tweaks=1/g' /usr/local/nagios/etc/nagios.cfg
+
+set +e
+
+# Fix permissions on config files (set +e just in case there are no files in hosts or services folders)
+echo "Fixing config file permissions..."
+chown $apacheuser:$nagiosgroup /usr/local/nagios/etc/*.cfg
+chown $apacheuser:$nagiosgroup /usr/local/nagios/etc/hosts/*.cfg
+chown $apacheuser:$nagiosgroup /usr/local/nagios/etc/services/*.cfg
+chown -R "$apacheuser:$apachegroup" /var/www/html/nagiosql/config
+
+# Fix permissions in custom-includes
+$proddir/html/includes/components/custom-includes/install.sh
+
+set -e
+
+# Set permissions on htpasswd file
+echo "Fixing htpasswd permissions..."
+chown -R $nagiosuser:$apachegroup "$proddir/etc/htpasswd.users"
+
+# Enforce proper group membership
+echo "Checking group memberships..."
+eval "$usermodbin" -a -G "$nagioscmdgroup" "$nagiosuser"
+eval "$usermodbin" -a -G "$nagioscmdgroup" "$apacheuser"
+eval "$usermodbin" -a -G "$nagiosgroup" "$nagiosuser"
+eval "$usermodbin" -a -G "$nagiosgroup" "$apacheuser"
+
+# Install new Nagios Core templates (restarts Nagios Core)
+./install-templates
+
+# Add changes to apache config
+if ! grep -q "{ 'OPTIONS', 'HEAD', 'TRACK' }" $httpdconfdir/nagiosxi.conf ; then
+	echo -e "\n<If \"%{REQUEST_METHOD} in { 'OPTIONS', 'HEAD', 'TRACK' }\">\nOrder allow,deny\nDeny from all\n</If>\nTraceEnable off" >> $httpdconfdir/nagiosxi.conf
+fi
+
+# Restart apache so it recognizes the new permissions
+$proddir/scripts/manage_services.sh restart httpd
+
+# Modify php-fpm configs if clear_env doesn't exist
+if [ "$dist" == "el8" ] || [ "$dist" == "el9" ]; then
+	if ! grep -q '^clear_env = no' /etc/php-fpm.d/www.conf ; then
+    	echo 'clear_env = no' >> /etc/php-fpm.d/www.conf
+    fi
+	if ! grep -q '^catch_workers_output = yes' /etc/php-fpm.d/www.conf ; then
+		# Ensure any worker errors are also seen
+		sed -i "s/$(grep 'catch_workers_output =' /etc/php-fpm.d/www.conf)/catch_workers_output = yes/" /etc/php-fpm.d/www.conf
+		# Ensure all errors go to www-error.log
+		error_log="$(grep 'error_log = ' /etc/php-fpm.conf)"
+		error_log="$(echo $error_log | sed -e 's/\//\\\//g')"
+		sed -i "s/$error_log/error_log = \/var\/log\/php-fpm\/www-error.log/" /etc/php-fpm.conf
+    fi
+	$proddir/scripts/manage_services.sh restart php-fpm
+fi
+    
+# Set SNMP MIB directory perms
+if [ -d "$mibsdir" ]; then
+	chgrp -R "$nagiosgroup" "$mibsdir"
+	chmod g+w -R "$mibsdir"
+	chmod g+ws "$mibsdir"
+fi
+
+# Fix SNMP trap handling python script for python 3
+if [ "$oldversion" -lt 5802 ]; then
+	if [ "$dist" == "el8" ] || [ "$dist" == "ubuntu20" ]; then
+		cp ./nagiosxi/basedir/html/includes/components/nxti/includes/snmptrap-bins/snmptraphandling.py /usr/local/bin/
+		chmod +x /usr/local/bin/snmptraphandling.py
+	fi
+fi
+
+if [ "$oldversion" -lt 5803 ]; then
+
+	# Copy updated utilities over
+	cp ./nagiosxi/basedir/html/includes/components/nxti/includes/snmptrap-bins/addmib /usr/local/bin/
+	chmod +x /usr/local/bin/addmib
+fi
+
+# Install updates to LDAP/AD integration component
+if [ "$oldversion" -lt 5808 ]; then
+	$proddir/html/includes/components/ldap_ad_integration/install.sh
+fi
+
+# XI 2024R1.2
+if [ "$oldversion" -lt 60200 ]; then
+	# Import references to MRTG configuration to the CCM
+	/bin/cp -Rf /etc/mrtg/conf.d /etc/mrtg/conf.d.bak
+	php ./nagiosxi/basedir/scripts/import_mrtg_configuration.php
+	./18-webroot
+fi
+
+# XI 2024R1.3 Fixes
+if [ "$oldversion" -lt 60300 ]; then
+	# Ensure sendmail is installed on Debian 11
+	if [ "$dist" == "debian11" ]; then
+		apt-get install -y sendmail
+	fi
+fi
+
+# Set permissions on OAuth templates
+chown $apacheuser:$nagiosgroup $proddir/html/includes/components/oauth2/access-templates.json
+
+# Sounds permissions get clobbered somewhere after component install - fix them here
+chmod 775 $proddir/html/sounds -R
+chown $apacheuser:$nagiosgroup $proddir/html/sounds -R
+
+# Install Autodiscovery
+chmod 776 $proddir/html/includes/components/autodiscovery/jobs
+
+# Make sure the tmp/phpmailer.log (Debugging) has been created and has the correct permissions, owner and group.
+touch "$proddir/tmp/phpmailer.log"
+chown "$apacheuser:$nagiosgroup" "$proddir/tmp/phpmailer.log"
+chmod 0664 "$proddir/tmp/phpmailer.log"
+
+# Fix permissions on plugin directory
+chown $apacheuser:$nagiosgroup -R /usr/local/nagios/libexec
+chmod ug+rwx -R /usr/local/nagios/libexec
+chmod g+s /usr/local/nagios/libexec
+chown root:$nagiosgroup /usr/local/nagios/libexec/check_dhcp
+chown root:$nagiosgroup /usr/local/nagios/libexec/check_icmp
+chmod u+s /usr/local/nagios/libexec/check_dhcp
+chmod u+s /usr/local/nagios/libexec/check_icmp
+
+# Fix mrtg data permissions
+chown "$apacheuser:$nagiosgroup" /etc/mrtg -R
+chmod 775 /etc/mrtg -R
+chown "$apacheuser:$nagiosgroup" /var/lib/mrtg -R
+chmod 775 /var/lib/mrtg -R
+
+# Sanity Check make sure these binaries don't have nagios write permissions XI:#668 - DA
+chmod 554 /usr/local/nagios/bin/nagios*
+chmod 554 /usr/local/nagios/bin/npcd*
+
+# Fix profile component directory structure and permissions
+mkdir -p /usr/local/nagiosxi/var/components/profile/
+chown nagios:nagios /usr/local/nagiosxi/var/components/profile/
+chmod 775 /usr/local/nagiosxi/var/components/profile/
+
+# Make sure to run the PHP upgrade
+php "$proddir/html/upgrade.php"
+
+ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet[^6]/{print substr($2,0)}' | sed 's|/.*||')
+
+if [ "$ip" == "" ]; then
+    ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet6/{print substr($2,0)}' | sed 's|/.*||')
+    ip="[$ip]"
+fi
+
+if [ "$ip" == "" ];then
+    ip="<HOSTNAME>"
+fi
+
+# Set php.ini defaults
+echo "Checking php.ini defaults..."
+for file in $(find /etc -name "php.ini"); do
+    echo "Checking max_execution_time for PHP in $file..."
+    if ! execution_time_line=$(grep "^max_execution_time =" $file); then
+        # Uncommented line not found, look for commented line, replace with our configuration
+        if execution_time_line=$(grep "^;max_execution_time =" $file); then
+            commented_execution_time_line=$(echo $execution_time_line | tail -n 1)
+            echo "Found commented max_execution_time value, setting to 600..."
+            sed -i "s/$commented_execution_time_line/max_execution_time = 600/g" $file
+        fi
+    else
+        execution_time=$(echo $execution_time_line | awk '{print $3}')
+        if [ ! -z "$execution_time_line" ] && ([[ $execution_time_line = ";"* ]] || [ "$execution_time" -lt "600" ]); then
+            echo "max_execution_time is less than 600 in $file, setting to 600..."
+            sed -i "s/$execution_time_line/max_execution_time = 600/g" $file
+        fi
+    fi
+
+    # Check max_input_time
+    echo "Checking max_input_time for PHP in $file..."
+    if ! max_input_time_line=$(grep "^max_input_time =" $file); then
+        # Uncommented line not found, look for commented line, replace with our configuration
+        if max_input_time_line=$(grep "^;max_input_time =" $file); then
+            commented_max_input_time_line=$(echo $max_input_time_line | tail -n 1)
+            echo "Found commented max_input_time value, setting to 1200..."
+            sed -i "s/$commented_max_input_time_line/max_input_time_line = 1200/g" $file
+        fi
+    else
+        input_time=$(echo $max_input_time_line | awk '{print $3}')
+        if [ ! -z "$max_input_time_line" ] && ([[ $max_input_time_line = ";"* ]] || [ "$input_time" -lt "1200" ]); then
+            echo "max_input_time is less than 1200 in $file, setting to 1200..."
+            sed -i "s/$max_input_time_line/max_input_time = 1200/g" $file
+        fi
+    fi
+
+    # Check max_input_vars
+    echo "Checking max_input_vars for PHP in $file..."
+    if ! max_input_vars_line=$(grep "^max_input_vars =" $file); then
+        # Uncommented line not found, look for commented line, replace with our configuration
+        if max_input_vars_line=$(grep "^;max_input_vars =" $file); then
+            commented_max_input_vars_line=$(echo $max_input_vars_line | tail -n 1)
+            echo "Found commented max_input_vars value, setting to 50000..."
+            sed -i "s/$commented_max_input_vars_line/max_input_vars = 50000/g" $file
+        fi
+    else
+        input_vars=$(echo $max_input_vars_line | awk '{print $3}')
+        if [ ! -z "$max_input_vars_line" ] && ([[ $max_input_vars_line = ";"* ]] || [ "$input_vars" -lt "50000" ]); then
+            echo "max_input_vars is less than 50000 in $file, setting to 50000..."
+            sed -i "s/$max_input_vars_line/max_input_vars = 50000/g" $file
+        fi
+    fi
+
+    # Check memory_limit
+    echo "Checking memory_limit for PHP in $file..."
+    if ! memory_limit_line=$(grep "^memory_limit =" $file); then
+        # Uncommented line not found, look for commented line, replace with our configuration
+        if memory_limit_line=$(grep "^;memory_limit =" $file); then
+            commented_memory_limit_line=$(echo $memory_limit_line | tail -n 1)
+            echo "Found commented memory_limit value, setting to 1024M..."
+            sed -i "s/$commented_memory_limit_line/memory_limit = 1024M/g" $file
+        fi
+    else
+        memory_limit=$(echo $memory_limit_line | awk '{print $3}')
+        # Extract the integer value from the memory limit
+        int_memory_limit=$(echo $memory_limit | sed 's/[^0-9]*//g')
+        # Compare the extracted integer value with another value
+        if [ ! -z "$memory_limit_line" ] && ([[ $memory_limit_line = ";"* ]] || [ "$int_memory_limit" -lt 1024 ]); then
+            echo "memory_limit is less than 1024M in $file, setting to 1024M..."
+            sed -i "s/$memory_limit_line/memory_limit = 1024M/g" $file
+        fi
+    fi
+done
+
+# Update Nagios Core contacts using the Core mail command (notify-[host/service]-by-email) to use Nagios XI's mail function (notify-[host/service]-by-email-xi)
+[ "$INTERACTIVE" = "True" ] && $proddir/scripts/convert_core_contacts.sh || echo "y" | $proddir/scripts/convert_core_contacts.sh
+
+# If the server has nagiosim and reactoreventhandler components installed, they need to be removed as they are discontinued and so they do not generate "PHP Notice: DB is not connected" messages.
+if [ -d "/usr/local/nagiosxi/html/includes/components/nagiosim" ]; then
+  mv -f /usr/local/nagiosxi/html/includes/components/nagiosim ~/nagiosim.backup
+fi
+
+if [ -d "/usr/local/nagiosxi/html/includes/components/reactoreventhandler" ]; then
+  mv -f /usr/local/nagiosxi/html/includes/components/reactoreventhandler ~/reactoreventhandler.backup
+fi
+
+if [ "$oldversion" -lt 60104 ]; then
+	php /usr/local/nagiosxi/scripts/mark_update_command_as_complete.php
+fi
+
+cat <<-EOF
+
+	Nagios XI Upgrade Complete!
+	---------------------------
+	$extra_message
+	You can access the Nagios XI web interface by visiting:
+	    http://$ip/nagiosxi/
+	
+EOF
+
+# If they are doing manual sudoers update
+if [ $UPDATE_SUDOERS -eq 1 ] && [ $DOSUDO -eq 0 ]; then
+	echo "============================="
+	echo "MANUALLY UPDATE SUDOERS FILE"
+	echo "============================="
+	echo ""
+	echo "Copy new sudo permissions from '$BASEDIR/nagiosxi/nagiosxi.sudoers' to the"
+	echo "/etc/sudoers file."
+	echo ""
+fi

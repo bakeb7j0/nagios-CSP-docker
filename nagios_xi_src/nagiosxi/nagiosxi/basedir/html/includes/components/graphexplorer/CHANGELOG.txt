@@ -1,0 +1,10 @@
+2.4.0 - 06/14/2024
+==================
+- Improved Graph Explorer's Multistacked performance graph by adding grouping by hostgroup/servicegroup [GL:XI#1008] - LG
+- Improved Graph Explorer's Neptune theme by putting graph management controls in a sliding drawer [GL:XI#1008] - LG
+
+2.3.2 - 05/28/2024
+==================
+- Initialized changelog - GW
+- Updated require version - GW
+- Fixed scaling issues in dashboards - DA

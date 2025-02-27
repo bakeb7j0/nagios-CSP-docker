@@ -1,0 +1,49 @@
+#!/bin/sh -e
+
+# Import gpg key
+if [ ! -f /etc/pki/rpm-gpg/GPG-KEY-NAGIOS-V3 ]; then
+	/bin/cp -f GPG-KEY-NAGIOS-V3 /etc/pki/rpm-gpg/GPG-KEY-NAGIOS-V3
+	rpm --import GPG-KEY-NAGIOS-V3
+fi
+
+tempdir=$(mktemp -d)
+
+echo "[offline-nagiosxi]
+name=Offline - nagiosxi
+baseurl=file://$tempdir/offline-nagiosxi/
+enabled=0
+module_hotfixes=1
+gpgcheck=0" >  /etc/yum.repos.d/offline-nagiosxi.repo
+
+cp -r offline-nagiosxi "$tempdir/"
+
+dnf clean all
+dnf -y --disablerepo=\* --enablerepo=offline-nagiosxi install nagiosxi --allowerasing
+
+# Clean up
+rm -f /etc/yum.repos.d/offline-nagiosxi.repo
+rm -rf $tempdir
+
+# Kind of a hack: make sure xi-itype is set to the correct value after an offline install.
+echo "offline" > /usr/local/nagiosxi/var/xi-itype
+
+# Get IP address
+ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet[^6]/{print substr($2,0)}' | sed 's|/.*||')
+if [ "$ip" == "" ]; then
+    ip=$(ip addr | grep global | grep -m 1 'inet' | awk '/inet6/{print substr($2,0)}' | sed 's|/.*||')
+    if [ "$ip" == "" ];then
+    	ip="<HOSTNAME>"
+    else
+    	ip="[$ip]"
+    fi
+fi
+
+cat <<-EOF
+
+	Nagios XI Installation Complete!
+	--------------------------------
+
+	You can access the Nagios XI web interface by visiting:
+	    http://${ip}/nagiosxi/
+
+EOF
