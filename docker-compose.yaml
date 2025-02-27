@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql_server
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: nagiosix
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: nagiosix
+      MYSQL_PASSWORD: 1_really_long_string_goes_here_CHANGE_ME!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - my_network
+
+  nagios-xi:
+    build: .
+    container_name: nagios-xi
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    networks:
+      - my_network
+#    volumes:
+
+    ports:
+      - "80:80" # Adjust as needed for Nagios
+      - "443:443"
+
+volumes:
+  mysql_data:
+  nagios_data:
+
+networks:
+  my_network:
