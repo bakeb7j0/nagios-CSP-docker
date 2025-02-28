@@ -42,14 +42,15 @@ fi
 # New object config files
 cp -r mods/cfg/objects/* /usr/local/nagios/etc/import
 
-# If centos != 7, add npcd and ntpd checks
-if [ ! `command -v systemctl` ]; then
-	cat localhost-extras.cfg >> /usr/local/nagios/etc/import/localhost.cfg
-
-	# New init file
-	cp -r mods/nagios.init /etc/init.d/nagios
-	chmod +x /etc/init.d/nagios
-fi
+# DOCKER INSTALL: Ubuntu uses systemd
+## If centos != 7, add npcd and ntpd checks
+#if [ ! `command -v systemctl` ]; then
+#	cat localhost-extras.cfg >> /usr/local/nagios/etc/import/localhost.cfg
+#
+#	# New init file
+#	cp -r mods/nagios.init /etc/init.d/nagios
+#	chmod +x /etc/init.d/nagios
+#fi
 
 # Static config files
 cp -r mods/cfg/static/* /usr/local/nagios/etc/static
@@ -79,10 +80,11 @@ find /usr/local/nagios/etc \
 	-maxdepth 1 -name \*.cfg -exec chmod ug-s {} +
 
 # Restart apache so it recognizes the new permissions
-if [ ! `command -v systemctl` ]; then
-	service $httpd restart
-else
-	systemctl restart $httpd
-fi
+# DOCKER INSTALL: Service and systemctl always fail.
+#if [ ! `command -v systemctl` ]; then
+#	service $httpd restart
+#else
+#	systemctl restart $httpd
+#fi
 
 echo "INSTALL: POST-INSTALL: Nagios Core post install completed OK."

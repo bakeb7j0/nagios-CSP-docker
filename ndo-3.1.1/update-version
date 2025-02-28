@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Get date (two formats)
+if [ -n "$2" ]; then
+    LONGDATE=`date -d "$2" "+%B %d, %Y"`
+    SHORTDATE=`date -d "$2" "+%Y-%m-%d"`
+    YEAR=`date -d "$2" "+%Y"`
+else
+    LONGDATE=`date "+%B %d, %Y"`
+    SHORTDATE=`date "+%Y-%m-%d"`
+    YEAR=`date "+%Y"`
+fi
+
+# Current version number
+CURRENTVERSION=3.1.1
+
+# Last date
+LASTDATE=2023-06-05
+
+if [ "x$1" = "x" ]
+then
+	echo "Usage: $0 <version number | \"newdate\"> [revision date]"
+	echo ""
+	echo "Run this script with the name of the new version (i.e. \"3.1.1\") to"
+	echo "update version number and modification date in files."
+	echo "Use the \"newdate\" argument if you want to keep the current version"
+	echo "number and just update the modification date."
+	echo ""
+	echo "Current version=$CURRENTVERSION"
+	echo "Current Modification date=$LASTDATE"
+	echo ""
+	exit 1
+fi
+
+# Keep track of last version, as it is needed to update quickstart guide pages
+lastversion=$CURRENTVERSION
+
+# What's the new version number (if any)?
+newversion=$1
+if [ "x$newversion" = "xnewdate" ]
+then
+    # No new version number, just a new version date
+    newversion=$CURRENTVERSION
+fi
+
+# Update version number in autoconf
+sed -i 's/PKG_VERSION=.*/PKG_VERSION="'"$newversion"'"/' configure.ac
+sed -i 's/AC_INIT.*/AC_INIT([NDOUtils], ['"$newversion"'], [devteam@nagios.com])/' configure.ac
+
+# Update version message in initialization log message
+sed -i 's/#define NDO_VERSION .*/#define NDO_VERSION "'$newversion'"/' src/ndo.c
+
+# Update this script
+sed -i 's/^CURRENTVERSION=.*/CURRENTVERSION='"$newversion"'/' prep-release
+sed -i 's/^LASTDATE=.*/LASTDATE='"$SHORTDATE"'/' prep-release

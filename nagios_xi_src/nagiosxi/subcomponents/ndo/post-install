@@ -30,6 +30,7 @@ else
 
 	# Install the database
 	# -- Apply some changes for newer MySQL restrictions if the ndo version isn't updated
+	echo "*******************HANDOFF**************************"
 	(
 		cd ./"$pkgname"/db
 		./db-mgmt.sh -u "$ndouser" -p "$ndopass" -h "$ndohost" -d nagios

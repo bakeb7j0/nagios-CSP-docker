@@ -125,41 +125,41 @@ fi
 echo "Checking MySQL credentials..."
 
 # Check Mysql root password if MySQL is already installed and running...
-if service $mysqld status &>/dev/null; then
-	# Test for null MySQL root password
-	if mysqlshow -u root &>/dev/null; then
-		echo "After installation your MySQL root password will be set to a random password."
-	elif mysqlshow -u root -p"$mysqlpass" &>/dev/null; then
-		echo "Entered MySQL password validated."
-	else
-		for i in 1 2 3; do
-			if [ "$INTERACTIVE" = "True" ]; then
-				echo "Enter the MySQL root password to continue..."
-				read -p "MySQL Root Password: " pass
-			fi
-
-			# Test the password
-			if mysqlshow -u root -p"$pass" &>/dev/null; then
-				echo "Password validated."
-				mysqlpass="$pass"
-
-				# Update xi-sys.cfg with MySQL password for later use by subcomponent install
-				if ! ./xivar mysqlpass "$mysqlpass"; then
-					echo "ERROR: Failed to update xi-sys.cfg with MySQL password - exiting." >&2
-					exit 1
-				fi			
-
-				break
-			else
-				echo "Password failed." >&2
-				[ $i -eq 3 ] && exit 1
-			fi
-		done
-	fi
+#if service $mysqld status &>/dev/null; then
+# Test for null MySQL root password
+if mysqlshow -u root &>/dev/null; then
+  echo "After installation your MySQL root password will be set to a random password."
+elif mysqlshow -u root -p"$mysqlpass" &>/dev/null; then
+  echo "Entered MySQL password validated."
 else
-	echo "MySQL not yet installed - that's okay."
-	export TUNE_MYSQL="True"
+  for i in 1 2 3; do
+    if [ "$INTERACTIVE" = "True" ]; then
+      echo "Enter the MySQL root password to continue..."
+      read -p "MySQL Root Password: " pass
+    fi
+
+    # Test the password
+    if mysqlshow -u root -p"$pass" &>/dev/null; then
+      echo "Password validated."
+      mysqlpass="$pass"
+
+      # Update xi-sys.cfg with MySQL password for later use by subcomponent install
+      if ! ./xivar mysqlpass "$mysqlpass"; then
+        echo "ERROR: Failed to update xi-sys.cfg with MySQL password - exiting." >&2
+        exit 1
+      fi
+
+      break
+    else
+      echo "Password failed." >&2
+      [ $i -eq 3 ] && exit 1
+    fi
+  done
 fi
+#else
+#	echo "MySQL not yet installed - that's okay."
+#	export TUNE_MYSQL="True"
+#fi
 
 # nagiosxi password
 if [ -z "$nagiosxipass" ]; then

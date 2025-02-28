@@ -1,24 +1,17 @@
-version: '3.8'
-
 services:
-  nagios-csp:
+  nagiosxi:
     build:
-      context: ./nagios-csp
-      dockerfile: Dockerfile
-    container_name: nagios-csp
-    restart: unless-stopped
-    networks:
-      - my_network
-    ports:
-      - "8080:80"   # Web UI
-      - "5667:5667" # NRPE (Nagios Remote Plugin Executor)
+      context: .
+      dockerfile: Dockerfile-nagiosxi
+      args:
+        MYSQL_HOST: ${MYSQL_HOST}
+        MYSQL_PORT: ${MYSQL_PORT}
+        MYSQL_PASS: ${MYSQL_PASS}
     volumes:
-      - nagios_data:/usr/local/nagios
-      - mysql_data:/var/lib/mysql
+      - nagios-data:/nagios
+    ports:
+      - "80:80"
+      - "5666:5666"
 
 volumes:
-  nagios_data:
-  mysql_data:
-
-networks:
-  my_network:
+  nagios-data:

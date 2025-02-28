@@ -1,0 +1,21 @@
+
+CC=@CC@
+
+CFLAGS=@CFLAGS@
+
+# for local development
+#CFLAGS=$(CFLAGS) -fdiagnostics-color=always
+
+SHAREDFLAGS=@SHAREDFLAGS@
+
+DBLIBS=@DBLIBS@
+
+DBFLAGS=@DBFLAGS@
+
+TESTLIBS=-lcheck -lsubunit -lm -lrt -lpthread
+
+DEFINITIONS=-DTESTING
+
+
+test: test.c test-bootstrap.c ../src/ndo.c
+	$(CC) $(CFLAGS) $(DBFLAGS) $^ -o $@ $(DEFINITIONS) $(DBLIBS) $(TESTLIBS)

@@ -31,7 +31,7 @@ if [[ $ver -ge 7 && "$distro" != "Debian" ]] || [ "$distro" == "Ubuntu" ] || [[ 
 	for f in nagios; do
 		sed -i '/<\/Directory>/c\   Require all denied\n</Directory>' $httpdconfdir/$f.conf
 	done
-    for f in nagiosxi nrdp; do
+  for f in nagiosxi nrdp; do
 		sed -i '/<\/Directory>/c\   Require all granted\n</Directory>' $httpdconfdir/$f.conf
 	done
 fi

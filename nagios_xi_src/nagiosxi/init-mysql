@@ -6,6 +6,7 @@
 # FUNCTIONS FOR MYSQL
 ##########################################
 update_mysql_root_password() {
+    echo "SETTING MySQL ROOT PASSWORD"
     case "$dist" in
         ubuntu20 | ubuntu22 | ubuntu24 )
             # This method of authentication is deprecated and subject for removal ref: https://dev.mysql.com/doc/refman/8.0/en/native-pluggable-authentication.html

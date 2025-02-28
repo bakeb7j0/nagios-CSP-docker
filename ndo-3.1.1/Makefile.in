@@ -1,0 +1,156 @@
+
+VALGRIND_OPTS=--leak-check=full --show-leak-kinds=all --track-origins=yes
+TESTDB=ndo
+
+INSTALL=@INSTALL@
+INSTALL_OPTS=@INSTALL_OPTS@
+BINDIR=@BINDIR@
+CFGDIR=@CFGDIR@
+NAGIOSCFG=@NAGIOSCFG@
+
+
+
+.PHONY: all test clean distclean
+
+
+none:
+	@echo "Use make with a target:"
+	@echo ""
+	@echo "    make all"
+	@echo "    make ndo.o"
+	@echo "    make clean"
+	@echo "    make distclean"
+	@echo ""
+	@echo "Installation targets:"
+	@echo ""
+	@echo "	   make install"
+	@echo "	   make install-config"
+	@echo "	   make install-broker-line"
+	@echo ""
+	@echo "Testing targets:"
+	@echo "(./configure --enable-testing)"
+	@echo ""
+	@echo "    make inittest"
+	@echo "    make test"
+	@echo "    make memtest"
+	@echo "    make coverage"
+	@echo "    make report"
+	@echo "    make ndo.obj"
+	@echo ""
+
+
+ndo.so: src/ndo.c src/ndo-handlers.c src/ndo-startup.c
+	cd src/ && $(MAKE) $@
+
+
+all: ndo.so
+
+
+install: ndo.so
+	$(INSTALL) -m 774 $(INSTALL_OPTS) src/ndo.so $(BINDIR)/ndo.so
+	@echo "Shared module ndo.so installed"
+
+
+install-config:
+	$(INSTALL) -m 644 $(INSTALL_OPTS) config/ndo.cfg-sample $(CFGDIR)/ndo.cfg
+	@echo "Configuration file installed"
+
+
+install-broker-line:
+	@if test -f $(NAGIOSCFG); then \
+		commentMessage="# Commented out by NDO 'make install-broker-line' on $$(date)"; \
+		sed -i "s/.*broker_module.*ndomod.o.*/$$commentMessage\n#&/" $(NAGIOSCFG); \
+		sed -i "s/.*broker_module.*ndo.so.*/$$commentMessage\n#&/" $(NAGIOSCFG); \
+		echo "" >> $(NAGIOSCFG); \
+		echo "# Added by NDO 'make install-broker-line' on $$(date)" >> $(NAGIOSCFG); \
+		echo "broker_module=$(BINDIR)/ndo.so $(CFGDIR)/ndo.cfg" >> $(NAGIOSCFG); \
+		echo "$(NAGIOSCFG) configured to use NDO"; \
+	else \
+		@echo "No Nagios configuration file found!"; \
+		@echo "Specify this file with ./configure --with-nagios-config=/path/to/file"; \
+	fi
+
+
+expanded:
+	cd src/ && $(MAKE) $@
+
+
+formatted:
+	@for file in $$(find . -type f -name "*.c" -o -name "*.h" -path ./include/nagios -prune); do \
+		clang-format -style=file $$file | sed 's/= {\(.*\)};$$/= { \1 };/' > $$file.formatted; \
+		mv $$file.formatted $$file; \
+	done
+	git status
+
+
+test-enabled:
+	cd test/ && $(MAKE) test
+
+
+test-disabled:
+	@echo "Testing disabled. Please run ./configure --enable-testing"
+
+
+test:
+	$(MAKE) test-@tests_enabled@
+
+
+coverage: test
+	@if which lcov; then \
+		lcov -c -d . -o test/coverage.info-file; \
+		genhtml test/coverage.info-file -o test/coverage/; \
+		echo "Your coverage report is in test/coverage/index.html"; \
+	else \
+		echo "You must install lcov first!"; \
+	fi
+
+
+memtest: test
+	@if which valgrind; then \
+		if test -f test/test; then \
+			valgrind $(VALGRIND_OPTS) test/test $(NDO_CONFIG_FILE); \
+		else \
+			echo "No test binary found. Did your build succeed?"; \
+		fi \
+	else \
+		echo "You must install valgrind first!"; \
+	fi
+
+
+report: coverage
+	@if which gcovr; then \
+		gcovr --exclude="test/*" -r . ; \
+	else \
+		echo "You must install gcovr first!"; \
+	fi
+
+
+inittest:
+	@if which mysql; then \
+		echo "You will be prompted for your mysql root password 3 times..."; \
+		mysql -u root -p -e "CREATE DATABASE $(TESTDB)"; \
+		mysql -u root -p -e "CREATE USER $(TESTDB)@'localhost' IDENTIFIED BY '$(TESTDB)'"; \
+		mysql -u root -p -e "GRANT ALL PRIVILEGES ON $(TESTDB).* TO '$(TESTDB)'@'localhost' WITH GRANT OPTION"; \
+		mysql -u $(TESTDB) -p$(TESTDB) $(TESTDB) < db/db.sql; \
+	else \
+		echo "You must have mysql client binary first!"; \
+	fi
+
+
+clean:
+	rm -f src/ndo.so
+	rm -f test/test
+	rm -f config.log config.status
+	rm -f src/*.gcda src/*.gcno
+	rm -f test/*.gcda test/*.gcno
+
+
+distclean: clean
+	rm -fr test/coverage
+	rm -f  test/coverage.info-file
+	rm -rf autom4te.cache
+	rm -f  configure
+	rm -f  Makefile
+	rm -f  src/Makefile
+	rm -f  test/Makefile
+	rm -f  include/config.h

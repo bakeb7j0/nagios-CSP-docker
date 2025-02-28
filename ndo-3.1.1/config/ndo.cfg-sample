@@ -1,0 +1,52 @@
+# This is an example of what your NDO-3 configuration could look like. 
+db_user=ndoutils
+db_pass=ndoutils
+db_name=nagios
+db_host=localhost
+db_port=3306
+#db_socket=/var/lib/mysql.sock
+db_max_reconnect_attempts=5
+
+# If NDO fails to load, the default behavior is for nagios to continue operating as normal.
+# Uncomment the next line and set die_on_failed_load to 1 to make nagios stop if NDO fails to load.
+# This does not cause nagios to die if there is an error in NDO's configuration or command-line arguments.
+# die_on_failed_load=0
+
+acknowledgement_data=1
+comment_data=1
+comment_history_data=0
+contact_status_data=1
+downtime_data=1
+downtime_history_data=0
+event_handler_data=1
+external_command_data=1
+flapping_data=1
+host_check_data=1
+host_status_data=1
+log_data=1
+main_config_data=1
+notification_data=1
+object_config_data=1
+process_data=1
+program_status_data=1
+retention_data=1
+service_check_data=1
+service_status_data=1
+state_change_data=1
+system_command_data=1
+timed_event_data=1
+
+config_output_options=2
+
+# Log failed queries - if manually set to 0, NDO will not try to log any queries that fail while MySQL is connected.
+# log_failed_queries=1
+
+# NDO debugging settings
+# Set debugging=1 to send debugging info to stdout
+# Set debugging=2 to send debugging info to the nagios debug log
+#debugging=0
+
+max_object_insert_count=250
+#timing_debugging_enabled=0
+
+mysql_set_charset_name=utf8
