@@ -55,7 +55,7 @@ else
         if [ "$dist" == "debian11" ] || [ "$dist" == "debian12" ]; then
             extras="$extras mariadb-server libmariadb-dev-compat libmariadb-dev python3-pymssql python3-pip python3-rrdtool sshpass"
         elif [ "$dist" == "ubuntu20" ] || [ "$dist" == "ubuntu22" ] || [ "$dist" == "ubuntu24" ]; then
-            extras="$extras libmysqlclient-dev python3-pymssql python3-lxml python3-numpy python3-pip python3-rrdtool sshpass"
+            extras="$extras libmysqlclient-dev python3-pymssql python3-lxml python3-numpy python3-pip python3-rrdtool mysql-client sshpass"
         else
             extras="$extras libmysqlclient-dev python-pymssql python-pip python-rrdtool mysql-server php-gettext"
         fi

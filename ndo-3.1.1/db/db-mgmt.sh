@@ -202,40 +202,40 @@ if [ "x$install" = "xTRUE" ]; then
     if [ $(check_mysql_creds) -ne 0 ]; then
         
         echo " > Creating database with user"
-        read -p "   > Enter MySQL root password: " mysqlpass
+#        read -p "   > Enter MySQL root password: " mysqlpass
 
         echo " > Using command line supplied credentials for account/db creation..."
         echo "   > Username: $dbuser"
         echo "   > Password: *****"
         echo "   > Database: $dbname"
 
-        read -p " > Press <ENTER> to continue..." enter
+#        read -p " > Press <ENTER> to continue..." enter
 
-        mysql -u root -p$mysqlpass -e "CREATE DATABASE $dbname"
+        mysql -u root -p"$MYSQL_PASS" -e "CREATE DATABASE IF NOT EXISTS $dbname"
         if [ $? -ne 0 ]; then
             echo "Something went wrong creating database '$dbname'"
             exit 1
         fi
 
-        mysql -u root -p$mysqlpass -e "CREATE USER $dbuser@'localhost' IDENTIFIED BY '$dbpass'"
+        mysql -u root -p"$MYSQL_PASS" -e "CREATE USER $dbuser@'localhost' IDENTIFIED BY '$dbpass'"
         if [ $? -ne 0 ]; then
             echo "Something went wrong creating user $dbuser@'localhost'"
             exit 1
         fi
 
-        mysql -u root -p$mysqlpass -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'localhost' WITH GRANT OPTION"
+        mysql -u root -p"$MYSQL_PASS" -e "GRANT ALL PRIVILEGES ON $dbname.* TO '$dbuser'@'localhost' WITH GRANT OPTION"
         if [ $? -ne 0 ]; then
             echo "Something went wrong granting privileges"
             exit 1
         fi
 
-        mysql -u root -p$mysqlpass -e "ALTER DATABASE $dbname CHARACTER SET utf8"
+        mysql -u root -p"$MYSQL_PASS" -e "ALTER DATABASE $dbname CHARACTER SET utf8"
         if [ $? -ne 0 ]; then
             echo "Something went wrong changing the character set"
             exit 1
         fi
 
-        mysql -u root -p$mysqlpass -e "ALTER DATABASE $dbname COLLATE 'utf8_general_ci'"
+        mysql -u root -p"$MYSQL_PASS" -e "ALTER DATABASE $dbname COLLATE 'utf8_general_ci'"
         if [ $? -ne 0 ]; then
             echo "Something went wrong changing the collation"
             exit 1
