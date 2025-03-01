@@ -31,7 +31,7 @@ USERNAME=root
 PASSWORD=
 
 # Host name (or IP address) of MySQL server e.g localhost
-DBHOST=mysql
+DBHOST=localhost
 
 # DB port for MySQL server e.g 3306
 DBPORT=3306
