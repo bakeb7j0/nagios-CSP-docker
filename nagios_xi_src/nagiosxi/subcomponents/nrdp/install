@@ -38,13 +38,13 @@ chmod +x /usr/local/nrdp/clients/*
 # Copy Apache conf
 cp "$pkgname/nrdp.conf" "$httpdconfdir"
 
-
-# Restart httpd
-if [ ! `command -v systemctl` ]; then
-	service $httpd restart
-else
-	systemctl restart $httpd
-fi
+# DOCKER Service bad, always fails on build.
+## Restart httpd
+#if [ ! `command -v systemctl` ]; then
+#	service $httpd restart
+#else
+#	systemctl restart $httpd
+#fi
 
 # Do a simple sanity check to make sure some key files exist...
 for f in /usr/local/nrdp/server/index.php ; do
