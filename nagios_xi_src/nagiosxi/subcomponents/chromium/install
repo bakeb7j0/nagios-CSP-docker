@@ -7,7 +7,8 @@ if [ "$distro" == "Ubuntu" ]; then
     apt install -y xdg-utils chromium-browser
     # Enabling linger allows the cron user to effectively run as nagios with snaps
     # https://forum.snapcraft.io/t/system-slice-cron-service-is-not-a-snap-cgroup/30196/5
-    loginctl enable-linger $nagiosuser
+    # DOCKER, this will fail on build, will set in entrypoint.
+#    loginctl enable-linger $nagiosuser
 elif [ "$distro" == "Debian" ]; then
     apt -y install chromium
     ln -s $(which chromium) /bin/chromium-browser

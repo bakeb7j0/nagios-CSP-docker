@@ -50,12 +50,13 @@ if [ "$distro" == "Ubuntu" ] || [ "$distro" == "Debian" ]; then
     # Enable ssl site
     a2ensite default-ssl
 
+    # DOCKER INSTALL< WILL FAIL.
     # Reload apache configs
-    if [ `command -v systemctl` ]; then
-        systemctl reload apache2
-    else
-        service apache2 reload
-    fi
+#    if [ `command -v systemctl` ]; then
+#        systemctl reload apache2
+#    else
+#        service apache2 reload
+#    fi
 else
     grep -v '</VirtualHost>' "$httpdconfdir/ssl.conf" > "$httpdconfdir/ssl.conf.new"
     mv -f "$httpdconfdir/ssl.conf.new" "$httpdconfdir/ssl.conf"
@@ -66,7 +67,7 @@ siab_service="shellinaboxd"
 if [ "$distro" == "Ubuntu" ] || [ "$distro" == "Debian" ]; then
     siab_service="shellinabox"
 fi
-systemctl restart $siab_service.service
-systemctl stop $siab_service.service
+#systemctl restart $siab_service.service
+#systemctl stop $siab_service.service
 
 echo "INSTALL: SSH Terminal installed OK."
