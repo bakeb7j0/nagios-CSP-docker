@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Dockerfile-mysql" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+    <deployment type="dockerfile">
+      <settings>
+        <option name="buildArgs">
+          <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="MYSQL_PASS" />
+              <option name="value" value="wfNS6uBTBJqcRknnhTRlPJ7U5p3jeH1PrOTgsLHmtYrmSYE5KgX5b5TVOFngcwcy" />
+            </DockerEnvVarImpl>
+          </list>
+        </option>
+        <option name="containerName" value="" />
+        <option name="commandLineOptions" value="--network nagios" />
+        <option name="sourceFilePath" value="Dockerfile-mysql" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>
