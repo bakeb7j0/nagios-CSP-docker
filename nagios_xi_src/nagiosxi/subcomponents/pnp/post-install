@@ -19,7 +19,8 @@ else
 	else
 		cp -f mods/npcd.service /usr/lib/systemd/system/npcd.service
 	fi
-	systemctl daemon-reload
+# DOCKER INSTALL, no running systemd
+#	systemctl daemon-reload
 fi
 
 # Copy modified configs

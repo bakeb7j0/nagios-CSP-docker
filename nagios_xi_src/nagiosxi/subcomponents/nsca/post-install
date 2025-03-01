@@ -25,15 +25,15 @@ chmod g+rw /usr/local/nagios/etc/nsca.cfg
 chmod g+rw /usr/local/nagios/etc/send_nsca.cfg
 
 # Restart xinetd
-if [ -d /etc/xinetd.d ] && [ "$dist" != "el9" ]; then
-	if [ ! `command -v systemctl` ]; then
-		service xinetd restart
-	else
-		systemctl restart xinetd
-	fi
-else
-	systemctl daemon-reload
-	systemctl start nsca
-fi
+#if [ -d /etc/xinetd.d ] && [ "$dist" != "el9" ]; then
+#	if [ ! `command -v systemctl` ]; then
+#		service xinetd restart
+#	else
+#		systemctl restart xinetd
+#	fi
+#else
+#	systemctl daemon-reload
+#	systemctl start nsca
+#fi
 
 echo "INSTALL: POST-INSTALL: NSCA post install completed OK."

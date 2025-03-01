@@ -16,7 +16,7 @@ tar -xzf "$pkgname.tar.gz"
 (
 	cd "./$pkgname"
 	if [ "$distro" == "Ubuntu" ] || [ "$distro" == "Debian" ]; then
-		./configure --with-ssl=/usr/bin/openssl --with-ssl-lib=/usr/lib/x86_64-linux-gnu --enable-command-args
+		./configure --with-ssl=/usr/bin/openssl --with-ssl-lib=/usr/lib/x86_64-linux-gnu --enable-command-args --with-init-type=systemd
 	elif [ "$distro" == "Raspbian" ]; then
 		./configure --with-ssl-lib=/usr/lib/arm-linux-gnueabihf --libexecdir=/usr/local/nagios/libexec --enable-command-args
 	else
@@ -36,12 +36,12 @@ tar -xzf "$pkgname.tar.gz"
 )
 
 # Start NRPE
-if [ ! `command -v systemctl` ]; then
-	service nrpe start
-else
-	systemctl daemon-reload
-	systemctl start nrpe
-fi
+#if [ ! `command -v systemctl` ]; then
+#	service nrpe start
+#else
+#	systemctl daemon-reload
+#	systemctl start nrpe
+#fi
 
 # Do a simple sanity check to make sure some key files exist...
 for f in /usr/local/nagios/bin/nrpe /usr/local/nagios/libexec/check_nrpe ; do
