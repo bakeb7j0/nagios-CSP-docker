@@ -36,9 +36,6 @@ else
     # Install the database
     # -- Apply some changes for newer MySQL restrictions if the ndo version isn't updated
     (
-      echo "DEBUG: COMMAND LINE IS:"
-      echo "./db-mgmt.sh -u $ndouser -p $ndopass -h $MYSQL_HOST -P $MYSQL_PORT -d nagios"
-      echo "DEBUG END COMMAND LINE"
       cd ./"$pkgname"/db
       ./db-mgmt.sh -u "$ndouser" -p "$ndopass" -h "$ndohost" -P "$ndoport" -d nagios
     )

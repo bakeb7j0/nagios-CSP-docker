@@ -47,5 +47,6 @@ else
 
 fi
 
-echo "Restarting $httpd with ModSecurity applied..."
-systemctl restart $httpd
+#echo "Restarting $httpd with ModSecurity applied..."
+# DOCKER INSTALL THIS WILL FAIL
+#systemctl restart $httpd
