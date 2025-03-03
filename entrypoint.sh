@@ -1,10 +1,14 @@
 #!/bin/bash
+for svc in cron postfix nagios ncpd nrpe ncsa; do
+  echo "Enabling service: $svc"
+  systemctl enable "$svc"
+done
 
-service nagios start
-service ncpd start
-service cron start
-service nrpe start
-service ncsa start
+for svc in cron postfix nagios ncpd nrpe ncsa; do
+  echo "Staring service: $svc"
+  systemctl start "$svc"
+done
+
 loginctl enable-linger nagios
 echo "Starting Apache..."
 apachectl -D FOREGROUND

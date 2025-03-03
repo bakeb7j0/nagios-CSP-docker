@@ -2,9 +2,9 @@
 # Create "nagiosxi" default database schema
 
 CREATE DATABASE `nagiosxi`;
-CREATE USER 'dbmaint_nagiosxi'@'localhost' IDENTIFIED BY 'DBMAINTDEFAULTPASSWORD';
+CREATE USER 'dbmaint_nagiosxi'@'%' IDENTIFIED BY 'DBMAINTDEFAULTPASSWORD';
 
-CREATE USER 'nagiosxi'@'localhost' IDENTIFIED BY 'NAGIOSXIDEFAULTPASSWORD';
+CREATE USER 'nagiosxi'@'%' IDENTIFIED BY 'NAGIOSXIDEFAULTPASSWORD';
 USE `nagiosxi`;
 
 CREATE TABLE IF NOT EXISTS `nagiosxi`.`xi_auditlog` (
@@ -325,33 +325,33 @@ CREATE TABLE IF NOT EXISTS `nagiosxi` . `xi_wizard_history` (
 
 -- Permissions at the bottom because the tables need to be created
 -- dbmaint_nagiosxi user
-GRANT SELECT,INSERT,DELETE ON `nagiosxi`.* TO 'dbmaint_nagiosxi'@'localhost';
-GRANT UPDATE ON `nagiosxi`.`xi_meta` TO 'dbmaint_nagiosxi'@'localhost';
-GRANT UPDATE ON `nagiosxi`.`xi_sysstat` TO 'dbmaint_nagiosxi'@'localhost';
+GRANT SELECT,INSERT,DELETE ON `nagiosxi`.* TO 'dbmaint_nagiosxi'@'%';
+GRANT UPDATE ON `nagiosxi`.`xi_meta` TO 'dbmaint_nagiosxi'@'%';
+GRANT UPDATE ON `nagiosxi`.`xi_sysstat` TO 'dbmaint_nagiosxi'@'%';
 
 -- nagiosxi user
-GRANT PROCESS ON *.* TO 'nagiosxi'@'localhost';
-GRANT LOCK TABLES ON `nagiosxi`.* TO 'nagiosxi'@'localhost';
-GRANT SELECT,INSERT ON `nagiosxi`.`xi_auditlog` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_auth_tokens` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_banner_messages` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_cmp_ccm_backups` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_cmp_favorites` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_cmp_nagiosbpi_backups` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_cmp_scheduledreports_log` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_cmp_trapdata` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_cmp_trapdata_log` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_commands` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_deploy_agents` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_deploy_jobs` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_eventqueue` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_events` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_link_users_messages` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_meta` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_mibs` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_options` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_sessions` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_sysstat` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_usermeta` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_users` TO 'nagiosxi'@'localhost';
-GRANT ALL ON `nagiosxi`.`xi_wizard_history` TO 'nagiosxi'@'localhost';
+GRANT PROCESS ON *.* TO 'nagiosxi'@'%';
+GRANT LOCK TABLES ON `nagiosxi`.* TO 'nagiosxi'@'%';
+GRANT SELECT,INSERT ON `nagiosxi`.`xi_auditlog` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_auth_tokens` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_banner_messages` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_cmp_ccm_backups` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_cmp_favorites` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_cmp_nagiosbpi_backups` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_cmp_scheduledreports_log` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_cmp_trapdata` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_cmp_trapdata_log` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_commands` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_deploy_agents` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_deploy_jobs` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_eventqueue` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_events` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_link_users_messages` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_meta` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_mibs` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_options` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_sessions` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_sysstat` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_usermeta` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_users` TO 'nagiosxi'@'%';
+GRANT ALL ON `nagiosxi`.`xi_wizard_history` TO 'nagiosxi'@'%';

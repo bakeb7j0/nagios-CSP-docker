@@ -185,18 +185,18 @@ elif [ "$distro" == "Debian" ] || [ "$distro" == "Ubuntu" ]; then
 	if [ -f /etc/init.d/snmptrapd ]; then
 		update-rc.d snmptrapd defaults
 		update-rc.d snmptrapd start 20 3 4 5
-		service snmptrapd restart
+#		service snmptrapd restart
 	fi
 
 	if [ `command -v systemctl` ]; then
 		systemctl enable snmptrapd
-		systemctl restart snmptrapd
+#		systemctl restart snmptrapd
 	fi
 
 else
 	chkconfig --add snmptrapd
 	chkconfig snmptrapd on
-	service snmptrapd restart
+#	service snmptrapd restart
 fi
 
 echo ""
@@ -273,17 +273,17 @@ fi
 # and attempt to autoconfigure NXTI. 
 
 echo "Restarting snmptt"
-service snmptt restart
+#service snmptt restart
 echo "Restarting snmptrapd"
-if [ "$dist" == "el8" ] || [ "$dist" == "el9" ]; then
-	systemctl daemon-reload
-	service snmptrapd restart
-elif [ "$distro" == "Debian" ] || [ "$distro" == "Ubuntu" ]; then
-	if [ $ver -ge 16 ]; then
-		service snmptrapd restart
-	else
-		service snmpd restart
-	fi
-fi
+#if [ "$dist" == "el8" ] || [ "$dist" == "el9" ]; then
+#	systemctl daemon-reload
+#	service snmptrapd restart
+#elif [ "$distro" == "Debian" ] || [ "$distro" == "Ubuntu" ]; then
+#	if [ $ver -ge 16 ]; then
+#		service snmptrapd restart
+#	else
+#		service snmpd restart
+#	fi
+#fi
 
 touch $BASEDIR/installed.nxti

@@ -45,12 +45,16 @@ echo "--------------------------------------"
 if [ $ret -eq 0 ]; then
 
     # Restart Nagios
-    sudo $BASEDIR/manage_services.sh restart nagios
-    ret=$?
-    if [ $ret -gt 0 ]; then
-        # Remove LOCKFILE
-        rm -f "$LOCKFILE"
-        exit 6
+    if [ "${DOCKER_INSTALLER}" != "True" ]; then
+     sudo $BASEDIR/manage_services.sh restart nagios
+      ret=$?
+      if [ $ret -gt 0 ]; then
+          # Remove LOCKFILE
+          rm -f "$LOCKFILE"
+          exit 6
+      fi
+    else
+      echo "Running docker installer, not restarting nagios, as it's not running."
     fi
 
     # Make a new NOM checkpoint
