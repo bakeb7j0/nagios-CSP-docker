@@ -1,15 +1,4 @@
 services:
-  
-  mysql:
-    image: mysql:latest
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASS}
-    volumes:
-      - mysql-data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-  
   nagiosxi:
     build:
       context: .
@@ -17,15 +6,12 @@ services:
       args:
         MYSQL_HOST: ${MYSQL_HOST}
         MYSQL_PORT: ${MYSQL_PORT}
-        MYSQL_PASS: ${MYSQL_PASS}
-    volumes:
-      - nagios-data:/nagios
+        MYSQL_ROOT_PASS: ${MYSQL_ROOT_PASS}
+    environment:
+      TZ: America/Toronto
+      GLOBAL_MYSQL_HOST: ${MYSQL_HOST}
     ports:
       - "80:80"
       - "5666:5666"
       - "5667:5667"
 
-volumes:
-  mysql-data:
-  nagios-data:
-  

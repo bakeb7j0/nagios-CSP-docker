@@ -46,7 +46,7 @@ if [ $ret -eq 0 ]; then
 
     # Restart Nagios
     if [ "${DOCKER_INSTALLER}" != "True" ]; then
-     sudo $BASEDIR/manage_services.sh restart nagios
+      sudo $BASEDIR/manage_services.sh restart nagios
       ret=$?
       if [ $ret -gt 0 ]; then
           # Remove LOCKFILE
