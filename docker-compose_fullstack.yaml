@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  nagios:
+    image: pnearing/nagios-csp:latest
+    container_name: nagios
+    ports:
+      - "${NAGIOS_HOST_PORT:-8080}:80"
+    depends_on:
+      - mysql
+    environment:
+      - NAGIOS_DB_HOST=mysql
+      - NAGIOS_DB_PORT=3306
+      - NAGIOS_DB_USER=${DB_USER}
+      - NAGIOS_DB_PASS=${DB_PASSWORD}
+      - NAGIOS_DB_NAME=${DB_NAME}
+    volumes:
+      - nagios_data:/opt/nagios/etc
+      - nagios_var:/opt/nagios/var
+      - nagios_graphs:/opt/graphios/var
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0.33
+    container_name: mysql
+    ports:
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  nagios_data:
+  nagios_var:
+  nagios_graphs:
+  mysql_data:
+
